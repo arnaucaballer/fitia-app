@@ -29,10 +29,14 @@ fun FitiaCard(
     content: @Composable () -> Unit,
 ) {
     val base = modifier
+        .fillMaxWidth()
         .clip(FitiaCardShape)
         .background(MaterialTheme.colorScheme.surfaceVariant)
     val clickable = if (onClick != null) base.clickable(onClick = onClick) else base
-    Box(modifier = clickable.padding(18.dp)) {
+    Column(
+        modifier = clickable.padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         content()
     }
 }
