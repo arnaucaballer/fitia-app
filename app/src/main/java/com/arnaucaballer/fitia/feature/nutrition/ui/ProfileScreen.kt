@@ -2,6 +2,8 @@ package com.arnaucaballer.fitia.feature.nutrition.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,7 +42,7 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.ActivityLevel
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionGoal
 import com.arnaucaballer.fitia.feature.nutrition.domain.Sex
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProfileScreen(
     onBack: () -> Unit,
@@ -144,13 +146,24 @@ fun ProfileScreen(
 
             Button(
                 onClick = {
+                    val weightKg = weight.replace(',', '.').toDoubleOrNull() ?: return@Button
+                    val heightCm = height.replace(',', '.').toDoubleOrNull() ?: return@Button
+                    val ageYears = age.toIntOrNull() ?: return@Button
+                    if (weightKg !in 30.0..300.0 || heightCm !in 100.0..250.0 || ageYears !in 10..100) {
+                        return@Button
+                    }
+                    val sexValue = runCatching { Sex.valueOf(sex) }.getOrDefault(Sex.Male)
+                    val activityValue = runCatching { ActivityLevel.valueOf(activity) }
+                        .getOrDefault(ActivityLevel.Moderate)
+                    val goalValue = runCatching { NutritionGoal.valueOf(goal) }
+                        .getOrDefault(NutritionGoal.Maintain)
                     viewModel.save(
-                        weightKg = weight.replace(',', '.').toDoubleOrNull() ?: return@Button,
-                        heightCm = height.replace(',', '.').toDoubleOrNull() ?: return@Button,
-                        ageYears = age.toIntOrNull() ?: return@Button,
-                        sex = Sex.valueOf(sex),
-                        activityLevel = ActivityLevel.valueOf(activity),
-                        goal = NutritionGoal.valueOf(goal),
+                        weightKg = weightKg,
+                        heightCm = heightCm,
+                        ageYears = ageYears,
+                        sex = sexValue,
+                        activityLevel = activityValue,
+                        goal = goalValue,
                         recalculate = true,
                     )
                     onBack()
@@ -163,19 +176,24 @@ fun ProfileScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RowChips(
     options: List<Pair<String, String>>,
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    options.forEach { (value, label) ->
-        FilterChip(
-            selected = selected == value,
-            onClick = { onSelect(value) },
-            label = { Text(label) },
-            modifier = Modifier.padding(end = 8.dp, bottom = 4.dp),
-        )
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        options.forEach { (value, label) ->
+            FilterChip(
+                selected = selected == value,
+                onClick = { onSelect(value) },
+                label = { Text(label) },
+            )
+        }
     }
 }
 

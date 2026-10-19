@@ -1,13 +1,5 @@
 package com.arnaucaballer.fitia.feature.chat.ui
 
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.os.Build
-import android.provider.MediaStore
-import android.util.Base64
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,9 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Settings
@@ -46,6 +40,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -55,6 +50,20 @@ import com.arnaucaballer.fitia.R
 import com.arnaucaballer.fitia.design.FitiaPill
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
+
+private val UserBubbleShape = RoundedCornerShape(
+    topStart = 20.dp,
+    topEnd = 20.dp,
+    bottomStart = 20.dp,
+    bottomEnd = 6.dp,
+)
+
+private val AssistantBubbleShape = RoundedCornerShape(
+    topStart = 20.dp,
+    topEnd = 20.dp,
+    bottomStart = 6.dp,
+    bottomEnd = 20.dp,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,12 +96,12 @@ fun ChatScreen(
         if (message == "missing_api_key") {
             snackbar.showSnackbar(context.getString(R.string.chat_missing_api_key))
         } else {
-            snackbar.showSnackbar(message)
+            snackbar.showSnackbar(message.take(180))
         }
         viewModel.clearError()
     }
 
-    LaunchedEffect(messages.size) {
+    LaunchedEffect(messages.size, loading) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.lastIndex)
         }
@@ -137,7 +146,7 @@ fun ChatScreen(
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (messages.isEmpty()) {
                     item {
@@ -148,26 +157,7 @@ fun ChatScreen(
                     }
                 }
                 items(messages, key = { it.id }) { message ->
-                    val alignment = if (message.isUser) Alignment.CenterEnd else Alignment.CenterStart
-                    val bg = if (message.isUser) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    }
-                    val fg = if (message.isUser) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = alignment) {
-                        Text(
-                            text = message.text,
-                            color = fg,
-                            modifier = Modifier
-                                .background(bg, FitiaPill)
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                        )
-                    }
+                    ChatBubble(message = message)
                 }
             }
 
@@ -213,5 +203,37 @@ fun ChatScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChatBubble(message: UiChatMessage) {
+    val isUser = message.isUser
+    val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
+    val shape = if (isUser) UserBubbleShape else AssistantBubbleShape
+    val bg = if (isUser) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val fg = if (isUser) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = alignment,
+    ) {
+        Text(
+            text = message.text,
+            color = fg,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier
+                .widthIn(max = 320.dp)
+                .clip(shape)
+                .background(bg)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        )
     }
 }

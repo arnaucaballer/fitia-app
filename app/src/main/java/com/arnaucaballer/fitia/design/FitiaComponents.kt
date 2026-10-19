@@ -155,13 +155,15 @@ fun FitiaProgressRow(
                 .clip(FitiaPill)
                 .background(MaterialTheme.colorScheme.outline),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress)
-                    .fillMaxHeight()
-                    .clip(FitiaPill)
-                    .background(accent),
-            )
+            if (progress > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress.coerceIn(0.001f, 1f))
+                        .fillMaxHeight()
+                        .clip(FitiaPill)
+                        .background(accent),
+                )
+            }
         }
     }
 }

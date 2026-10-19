@@ -215,18 +215,25 @@ fun NutritionHomeScreen(
             }
         }
         item {
-            FitiaSecondaryButton(stringResource(R.string.nutrition_foods), onOpenFoods)
+            FitiaSecondaryButton(
+                text = stringResource(R.string.nutrition_foods),
+                onClick = onOpenFoods,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         state.dayLog.meals.forEach { meal ->
-            item {
+            item(key = "meal-header-${meal.id}") {
                 FitiaSectionHeader(
                     title = meal.name,
                     actionLabel = stringResource(R.string.nutrition_add_food),
                     onAction = { onAddEntry(meal.id) },
                 )
             }
-            items(meal.entries, key = { it.id }) { entry ->
+            items(
+                items = meal.entries,
+                key = { entry -> "meal-${meal.id}-entry-${entry.id}" },
+            ) { entry ->
                 FitiaCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

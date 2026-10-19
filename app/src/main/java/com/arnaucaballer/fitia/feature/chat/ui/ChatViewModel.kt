@@ -28,6 +28,7 @@ class ChatViewModel(
     private val nutritionRepository: NutritionRepository,
 ) : ViewModel() {
 
+    /** Full API history (user/assistant/tool). Grows without a hard chat cap. */
     private val history = mutableListOf<ChatMessage>()
 
     private val _messages = MutableStateFlow<List<UiChatMessage>>(emptyList())
@@ -61,31 +62,40 @@ class ChatViewModel(
             }
             _error.value = null
             _isLoading.value = true
-            _messages.value = _messages.value + UiChatMessage(
+            val userUi = UiChatMessage(
                 id = UUID.randomUUID().toString(),
                 isUser = true,
                 text = trimmed,
             )
+            _messages.value = _messages.value + userUi
+
             runCatching {
-                val updated = orchestrator.reply(
+                orchestrator.reply(
                     settings = settings,
-                    history = history,
+                    history = history.toList(),
                     userText = trimmed,
                 )
+            }.onSuccess { updated ->
                 history.clear()
                 history.addAll(updated)
-                _messages.value = updated
+                val visible = updated
                     .filter { it.role == ChatRole.User || it.role == ChatRole.Assistant }
                     .filter { it.toolCalls.isEmpty() || it.text.isNotBlank() }
-                    .map {
+                    .map { msg ->
                         UiChatMessage(
                             id = UUID.randomUUID().toString(),
-                            isUser = it.role == ChatRole.User,
-                            text = it.text.ifBlank { "(acción realizada)" },
+                            isUser = msg.role == ChatRole.User,
+                            text = msg.text.ifBlank { "(acción realizada)" },
                         )
                     }
+                _messages.value = visible
             }.onFailure { throwable ->
                 _error.value = throwable.message ?: "error"
+                _messages.value = _messages.value + UiChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    isUser = false,
+                    text = "No he podido responder ahora. Inténtalo de nuevo.",
+                )
             }
             _isLoading.value = false
         }
@@ -117,28 +127,33 @@ class ChatViewModel(
 
     fun confirmFoodEstimate(estimate: FoodPhotoEstimate, mealName: String) {
         viewModelScope.launch {
-            val day = LocalDate.now().toEpochDay()
-            nutritionRepository.ensureDefaultMeals(day)
-            val dayLog = nutritionRepository.observeDayLog(day).first()
-            val mealId = dayLog.meals.firstOrNull { it.name.equals(mealName, true) }?.id
-                ?: nutritionRepository.addMeal(day, mealName)
-            nutritionRepository.addEntry(
-                MealEntry(
-                    mealId = mealId,
-                    name = estimate.name,
-                    grams = estimate.grams,
-                    calories = estimate.calories,
-                    proteinGrams = estimate.proteinGrams,
-                    carbsGrams = estimate.carbsGrams,
-                    fatGrams = estimate.fatGrams,
-                ),
-            )
-            _pendingFood.value = null
-            _messages.value = _messages.value + UiChatMessage(
-                id = UUID.randomUUID().toString(),
-                isUser = false,
-                text = "He añadido ${estimate.name} a $mealName.",
-            )
+            runCatching {
+                val day = LocalDate.now().toEpochDay()
+                nutritionRepository.ensureDefaultMeals(day)
+                val dayLog = nutritionRepository.observeDayLog(day).first()
+                val mealId = dayLog.meals.firstOrNull { it.name.equals(mealName, true) }?.id
+                    ?: nutritionRepository.addMeal(day, mealName)
+                nutritionRepository.addEntry(
+                    MealEntry(
+                        mealId = mealId,
+                        name = estimate.name,
+                        grams = estimate.grams,
+                        calories = estimate.calories,
+                        proteinGrams = estimate.proteinGrams,
+                        carbsGrams = estimate.carbsGrams,
+                        fatGrams = estimate.fatGrams,
+                    ),
+                )
+            }.onSuccess {
+                _pendingFood.value = null
+                _messages.value = _messages.value + UiChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    isUser = false,
+                    text = "He añadido ${estimate.name} a $mealName.",
+                )
+            }.onFailure { throwable ->
+                _error.value = throwable.message ?: "error"
+            }
         }
     }
 

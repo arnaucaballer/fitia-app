@@ -9,6 +9,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -52,7 +54,7 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.Sex
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NutritionPlanWizardScreen(
     onBack: () -> Unit,
@@ -149,28 +151,34 @@ fun NutritionPlanWizardScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(stringResource(R.string.field_sex), style = MaterialTheme.typography.labelLarge)
-            Sex.entries.forEach { option ->
-                FilterChip(
-                    selected = sex == option,
-                    onClick = { sex = option },
-                    label = { Text(option.name) },
-                )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Sex.entries.forEach { option ->
+                    FilterChip(
+                        selected = sex == option,
+                        onClick = { sex = option },
+                        label = { Text(option.name) },
+                    )
+                }
             }
             Text(stringResource(R.string.field_activity), style = MaterialTheme.typography.labelLarge)
-            ActivityLevel.entries.forEach { option ->
-                FilterChip(
-                    selected = activity == option,
-                    onClick = { activity = option },
-                    label = { Text(option.name) },
-                )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ActivityLevel.entries.forEach { option ->
+                    FilterChip(
+                        selected = activity == option,
+                        onClick = { activity = option },
+                        label = { Text(option.name) },
+                    )
+                }
             }
             Text(stringResource(R.string.field_goal), style = MaterialTheme.typography.labelLarge)
-            NutritionGoal.entries.forEach { option ->
-                FilterChip(
-                    selected = goal == option,
-                    onClick = { goal = option },
-                    label = { Text(option.name) },
-                )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NutritionGoal.entries.forEach { option ->
+                    FilterChip(
+                        selected = goal == option,
+                        onClick = { goal = option },
+                        label = { Text(option.name) },
+                    )
+                }
             }
             OutlinedTextField(
                 value = notes,
