@@ -21,6 +21,31 @@ printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
 
 El APK queda en `app/build/outputs/apk/debug/app-debug.apk`. Cópialo al teléfono e instálalo (orígenes desconocidos activados).
 
+## Probar aquí (emulador en WSL)
+
+Una sola vez (pide contraseña de sudo: grupo `kvm` + libs):
+
+```bash
+./scripts/setup-wsl-emulator.sh
+newgrp kvm   # o cierra y abre la terminal
+```
+
+Después, cada vez:
+
+```bash
+./scripts/run-fitia.sh
+```
+
+Compila el APK debug, abre el emulador `Fitia_API34` en una ventana WSLg, lo instala y lanza Fitia.
+
+Para parar el emulador:
+
+```bash
+./scripts/stop-emulator.sh
+```
+
+**Teléfono:** con depuración USB (o `adb connect IP:PUERTO`), el mismo `./scripts/run-fitia.sh` usa el dispositivo si aparece en `adb devices`.
+
 ## Clave de IA
 
 En la app: **Chat → icono de Ajustes → Clave de API**.
