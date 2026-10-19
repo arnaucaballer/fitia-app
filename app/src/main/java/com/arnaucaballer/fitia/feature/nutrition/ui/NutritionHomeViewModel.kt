@@ -22,22 +22,36 @@ class NutritionHomeViewModel(
 
     private val selectedDay = MutableStateFlow(LocalDate.now().toEpochDay())
 
+    private val dayLogFlow = selectedDay.flatMapLatest { day ->
+        flow {
+            repository.ensureDefaultMeals(day)
+            emitAll(repository.observeDayLog(day))
+        }
+    }
+
+    private val waterFlow = selectedDay.flatMapLatest { day ->
+        repository.observeWaterTotal(day)
+    }
+
     val uiState: StateFlow<NutritionHomeUiState> = combine(
-        selectedDay.flatMapLatest { day ->
-            flow {
-                repository.ensureDefaultMeals(day)
-                emitAll(repository.observeDayLog(day))
-            }
+        combine(
+            dayLogFlow,
+            waterFlow,
+            repository.observeTargets(),
+            repository.observeProfile(),
+            repository.observePlans(),
+        ) { dayLog, waterMl, targets, profile, plans ->
+            Quint(dayLog, waterMl, targets, profile, plans)
         },
-        repository.observeTargets(),
-        repository.observeProfile(),
         selectedDay,
-    ) { dayLog, targets, profile, day ->
+    ) { quint, day ->
         NutritionHomeUiState(
             dayEpochDay = day,
-            dayLog = dayLog,
-            targets = targets,
-            profile = profile,
+            dayLog = quint.a,
+            waterMl = quint.b,
+            targets = quint.c,
+            profile = quint.d,
+            plans = quint.e,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -54,4 +68,18 @@ class NutritionHomeViewModel(
             repository.deleteEntry(entryId)
         }
     }
+
+    fun addWater(amountMl: Int) {
+        viewModelScope.launch {
+            repository.addWater(selectedDay.value, amountMl)
+        }
+    }
+
+    private data class Quint<A, B, C, D, E>(
+        val a: A,
+        val b: B,
+        val c: C,
+        val d: D,
+        val e: E,
+    )
 }

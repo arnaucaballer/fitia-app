@@ -1,14 +1,16 @@
 package com.arnaucaballer.fitia.core.ai
 
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,6 +21,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 class OpenAiCompatibleClient {
@@ -26,17 +32,24 @@ class OpenAiCompatibleClient {
         ignoreUnknownKeys = true
         isLenient = true
         encodeDefaults = false
+        explicitNulls = false
     }
 
     private val client = HttpClient(Android) {
+        expectSuccess = false
         install(ContentNegotiation) {
             json(json)
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 120_000
+            connectTimeoutMillis = 30_000
+            socketTimeoutMillis = 120_000
         }
     }
 
     suspend fun complete(settings: AiSettings, request: ChatCompletionRequest): ChatCompletionResult {
         if (!settings.isConfigured) {
-            error("API key missing")
+            error("Falta la clave de API. Ábrela en Ajustes.")
         }
         val body = buildJsonObject {
             put("model", request.model)
@@ -45,27 +58,42 @@ class OpenAiCompatibleClient {
                 put("tools", toolsToJson(request.tools))
             }
         }
-        val response: ApiResponse = client.post("${settings.effectiveBaseUrl.trimEnd('/')}/chat/completions") {
+        val httpResponse = client.post("${settings.effectiveBaseUrl.trimEnd('/')}/chat/completions") {
             contentType(ContentType.Application.Json)
-            header("Authorization", "Bearer ${settings.apiKey}")
+            header("Authorization", "Bearer ${settings.apiKey.trim()}")
             header("HTTP-Referer", "https://github.com/arnaucaballer/fitia-app")
             header("X-Title", "Fitia")
             setBody(body)
-        }.body()
+        }
+        val raw = httpResponse.bodyAsText()
+        if (!httpResponse.status.isSuccess()) {
+            val detail = runCatching {
+                json.parseToJsonElement(raw).jsonObject["error"]
+                    ?.jsonObject?.get("message")?.jsonPrimitive?.contentOrNull
+            }.getOrNull()
+            error(detail ?: "Error API ${httpResponse.status.value}: ${raw.take(240)}")
+        }
 
-        val choice = response.choices.firstOrNull()
-            ?: error("Empty completion response")
-        val message = choice.message
-        val toolCalls = message.toolCalls.orEmpty().map { call ->
+        val response = json.decodeFromString(ApiResponse.serializer(), raw)
+        val message = response.choices.firstOrNull()?.message
+            ?: error("La API no devolvió ninguna respuesta.")
+        val toolCalls = message.toolCalls.orEmpty().mapNotNull { call ->
+            val name = call.function?.name ?: return@mapNotNull null
+            val args = when (val arguments = call.function.arguments) {
+                null -> "{}"
+                is JsonPrimitive -> arguments.content
+                else -> arguments.toString()
+            }
             ChatToolCall(
-                id = call.id,
-                name = call.function.name,
-                argumentsJson = call.function.arguments,
+                id = call.id ?: "tool_${name}",
+                name = name,
+                argumentsJson = args.ifBlank { "{}" },
             )
         }
+        val text = message.contentText()
         return ChatCompletionResult(
             message = ChatMessage.assistant(
-                text = message.content.orEmpty(),
+                text = text,
                 toolCalls = toolCalls,
             ),
         )
@@ -83,7 +111,9 @@ class OpenAiCompatibleClient {
                             message.name?.let { put("name", it) }
                         }
                         message.toolCalls.isNotEmpty() -> {
-                            put("content", message.text)
+                            if (message.text.isNotBlank()) {
+                                put("content", message.text)
+                            }
                             put(
                                 "tool_calls",
                                 buildJsonArray {
@@ -188,18 +218,30 @@ private data class ApiChoice(
 
 @Serializable
 private data class ApiMessage(
-    val content: String? = null,
+    val content: JsonElement? = null,
     @SerialName("tool_calls") val toolCalls: List<ApiToolCall>? = null,
 )
 
 @Serializable
 private data class ApiToolCall(
-    val id: String,
-    val function: ApiFunctionCall,
+    val id: String? = null,
+    val function: ApiFunctionCall? = null,
 )
 
 @Serializable
 private data class ApiFunctionCall(
-    val name: String,
-    val arguments: String,
+    val name: String? = null,
+    val arguments: JsonElement? = null,
 )
+
+private fun ApiMessage.contentText(): String {
+    val element = content ?: return ""
+    return when (element) {
+        is JsonPrimitive -> element.contentOrNull.orEmpty()
+        is JsonArray -> element.mapNotNull { part ->
+            part.jsonObject["text"]?.jsonPrimitive?.contentOrNull
+        }.joinToString("\n")
+        is JsonObject -> element["text"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        else -> element.toString()
+    }
+}

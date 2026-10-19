@@ -4,6 +4,27 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 object FitiaMigrations {
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE workouts ADD COLUMN planId INTEGER")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_workouts_planId ON workouts(planId)")
+            db.execSQL("ALTER TABLE macro_targets ADD COLUMN waterMlGoal INTEGER NOT NULL DEFAULT 3000")
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS water_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    dayEpochDay INTEGER NOT NULL,
+                    amountMl INTEGER NOT NULL,
+                    createdAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_water_logs_dayEpochDay ON water_logs(dayEpochDay)",
+            )
+        }
+    }
+
     val MIGRATION_1_2 = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(

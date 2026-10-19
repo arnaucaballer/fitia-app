@@ -27,4 +27,7 @@ interface NutritionRepository {
     suspend fun addEntry(entry: MealEntry): Long
     suspend fun updateEntry(entry: MealEntry)
     suspend fun deleteEntry(entryId: Long)
+
+    fun observeWaterTotal(dayEpochDay: Long): Flow<Int>
+    suspend fun addWater(dayEpochDay: Long, amountMl: Int)
 }

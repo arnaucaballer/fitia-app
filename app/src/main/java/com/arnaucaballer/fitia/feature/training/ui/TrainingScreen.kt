@@ -26,6 +26,16 @@ fun TrainingScreen(modifier: Modifier = Modifier) {
                 onOpenPlan = { id -> navController.navigate(TrainingRoutes.planDetail(id)) },
                 onOpenWorkout = { id -> navController.navigate(TrainingRoutes.workoutDetail(id)) },
                 onOpenSession = { id -> navController.navigate(TrainingRoutes.session(id)) },
+                onGeneratePlan = { navController.navigate(TrainingRoutes.GeneratePlan) },
+            )
+        }
+        composable(TrainingRoutes.GeneratePlan) {
+            GenerateTrainingPlanScreen(
+                onBack = { navController.popBackStack() },
+                onCreated = { id ->
+                    navController.popBackStack()
+                    navController.navigate(TrainingRoutes.planDetail(id))
+                },
             )
         }
         composable(TrainingRoutes.Exercises) {

@@ -2,6 +2,7 @@ package com.arnaucaballer.fitia.feature.nutrition.data
 
 import com.arnaucaballer.fitia.core.database.MealEntity
 import com.arnaucaballer.fitia.core.database.NutritionDao
+import com.arnaucaballer.fitia.core.database.WaterLogEntity
 import com.arnaucaballer.fitia.feature.nutrition.domain.BodyProfile
 import com.arnaucaballer.fitia.feature.nutrition.domain.DayLog
 import com.arnaucaballer.fitia.feature.nutrition.domain.FoodItem
@@ -68,6 +69,7 @@ class RoomNutritionRepository(
                 proteinPerKg = current?.proteinPerKg ?: 2.0,
                 fatPerKg = current?.fatPerKg ?: 0.8,
                 manualOverride = true,
+                waterMlGoal = current?.waterMlGoal ?: 3000,
             ),
         )
     }
@@ -137,5 +139,19 @@ class RoomNutritionRepository(
     override suspend fun deleteEntry(entryId: Long) {
         val entity = dao.getEntry(entryId) ?: return
         dao.deleteEntry(entity)
+    }
+
+    override fun observeWaterTotal(dayEpochDay: Long): Flow<Int> =
+        dao.observeWaterTotal(dayEpochDay)
+
+    override suspend fun addWater(dayEpochDay: Long, amountMl: Int) {
+        if (amountMl == 0) return
+        dao.insertWaterLog(
+            WaterLogEntity(
+                dayEpochDay = dayEpochDay,
+                amountMl = amountMl,
+                createdAtEpochMs = System.currentTimeMillis(),
+            ),
+        )
     }
 }

@@ -26,6 +26,12 @@ interface TrainingDao {
     @Query("SELECT * FROM workouts ORDER BY name COLLATE NOCASE ASC")
     fun observeWorkouts(): Flow<List<WorkoutEntity>>
 
+    @Query("SELECT * FROM workouts WHERE planId IS NULL ORDER BY name COLLATE NOCASE ASC")
+    fun observeGenericWorkouts(): Flow<List<WorkoutEntity>>
+
+    @Query("SELECT * FROM workouts WHERE planId = :planId ORDER BY name COLLATE NOCASE ASC")
+    fun observePlanOwnedWorkouts(planId: Long): Flow<List<WorkoutEntity>>
+
     @Query("SELECT * FROM workouts WHERE id = :id")
     suspend fun getWorkout(id: Long): WorkoutEntity?
 

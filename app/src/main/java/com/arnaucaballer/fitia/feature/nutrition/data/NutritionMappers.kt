@@ -46,6 +46,7 @@ internal fun MacroTargetsEntity.toDomain(): MacroTargets = MacroTargets(
     proteinPerKg = proteinPerKg,
     fatPerKg = fatPerKg,
     manualOverride = manualOverride,
+    waterMlGoal = waterMlGoal,
 )
 
 internal fun MacroTargets.toEntity(): MacroTargetsEntity = MacroTargetsEntity(
@@ -58,6 +59,7 @@ internal fun MacroTargets.toEntity(): MacroTargetsEntity = MacroTargetsEntity(
     proteinPerKg = proteinPerKg,
     fatPerKg = fatPerKg,
     manualOverride = manualOverride,
+    waterMlGoal = waterMlGoal,
 )
 
 internal fun NutritionPlanEntity.toDomain(): NutritionPlan = NutritionPlan(

@@ -24,6 +24,20 @@ fun NutritionScreen(modifier: Modifier = Modifier) {
                 onOpenPlans = { navController.navigate(NutritionRoutes.Plans) },
                 onOpenFoods = { navController.navigate(NutritionRoutes.Foods) },
                 onAddEntry = { mealId -> navController.navigate(NutritionRoutes.addEntry(mealId)) },
+                onFoodPhoto = { navController.navigate(NutritionRoutes.FoodPhoto) },
+                onCreatePlanWizard = { navController.navigate(NutritionRoutes.PlanWizard) },
+            )
+        }
+        composable(NutritionRoutes.FoodPhoto) {
+            FoodPhotoScreen(onBack = { navController.popBackStack() })
+        }
+        composable(NutritionRoutes.PlanWizard) {
+            NutritionPlanWizardScreen(
+                onBack = { navController.popBackStack() },
+                onCreated = {
+                    navController.popBackStack()
+                    navController.navigate(NutritionRoutes.Plans)
+                },
             )
         }
         composable(NutritionRoutes.Profile) {

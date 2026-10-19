@@ -132,6 +132,7 @@ fun TargetsScreen(
                             fatPerKg = fatPerKg.replace(',', '.').toDoubleOrNull()
                                 ?: current.fatPerKg,
                             manualOverride = true,
+                            waterMlGoal = current.waterMlGoal,
                         ),
                     )
                     onBack()

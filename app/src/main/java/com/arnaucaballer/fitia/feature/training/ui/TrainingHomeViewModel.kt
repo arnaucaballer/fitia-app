@@ -3,8 +3,8 @@ package com.arnaucaballer.fitia.feature.training.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnaucaballer.fitia.feature.training.domain.ObserveActiveSessionUseCase
+import com.arnaucaballer.fitia.feature.training.domain.ObserveGenericWorkoutsUseCase
 import com.arnaucaballer.fitia.feature.training.domain.ObservePlansUseCase
-import com.arnaucaballer.fitia.feature.training.domain.ObserveWorkoutsUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -12,18 +12,18 @@ import kotlinx.coroutines.flow.stateIn
 
 class TrainingHomeViewModel(
     observePlansUseCase: ObservePlansUseCase,
-    observeWorkoutsUseCase: ObserveWorkoutsUseCase,
+    observeGenericWorkoutsUseCase: ObserveGenericWorkoutsUseCase,
     observeActiveSessionUseCase: ObserveActiveSessionUseCase,
 ) : ViewModel() {
 
     val uiState: StateFlow<TrainingHomeUiState> = combine(
         observePlansUseCase(),
-        observeWorkoutsUseCase(),
+        observeGenericWorkoutsUseCase(),
         observeActiveSessionUseCase(),
     ) { plans, workouts, activeSession ->
         TrainingHomeUiState(
             plans = plans,
-            workouts = workouts,
+            genericWorkouts = workouts,
             activeSession = activeSession,
         )
     }.stateIn(
