@@ -20,3 +20,4 @@ app/build/
 .env
 .env.*
 !.env.example
+/dist/

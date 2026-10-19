@@ -100,17 +100,13 @@ fun ChatScreen(
     }
 
     LaunchedEffect(error) {
-        when (error) {
-            "missing_api_key" -> {
-                snackbar.showSnackbar(context.getString(R.string.chat_missing_api_key))
-                viewModel.clearError()
-            }
-            null -> Unit
-            else -> {
-                snackbar.showSnackbar(error)
-                viewModel.clearError()
-            }
+        val message = error ?: return@LaunchedEffect
+        if (message == "missing_api_key") {
+            snackbar.showSnackbar(context.getString(R.string.chat_missing_api_key))
+        } else {
+            snackbar.showSnackbar(message)
         }
+        viewModel.clearError()
     }
 
     Scaffold(
