@@ -3,6 +3,12 @@ package com.arnaucaballer.fitia.di
 import android.content.Context
 import androidx.room.Room
 import com.arnaucaballer.fitia.core.database.FitiaDatabase
+import com.arnaucaballer.fitia.core.database.FitiaMigrations
+import com.arnaucaballer.fitia.feature.nutrition.data.OpenFoodFactsClient
+import com.arnaucaballer.fitia.feature.nutrition.data.RoomNutritionRepository
+import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionRepository
+import com.arnaucaballer.fitia.feature.nutrition.domain.RecalculateTargetsUseCase
+import com.arnaucaballer.fitia.feature.nutrition.domain.SaveManualTargetsUseCase
 import com.arnaucaballer.fitia.feature.training.data.RoomTrainingRepository
 import com.arnaucaballer.fitia.feature.training.domain.DeleteExerciseUseCase
 import com.arnaucaballer.fitia.feature.training.domain.DeletePlanUseCase
@@ -30,10 +36,15 @@ class AppContainer(
         context.applicationContext,
         FitiaDatabase::class.java,
         "fitia.db",
-    ).build()
+    ).addMigrations(FitiaMigrations.MIGRATION_1_2).build()
 
     val trainingRepository: TrainingRepository =
         RoomTrainingRepository(database.trainingDao())
+
+    val nutritionRepository: NutritionRepository =
+        RoomNutritionRepository(database.nutritionDao())
+
+    val openFoodFactsClient = OpenFoodFactsClient()
 
     val observeExercisesUseCase = ObserveExercisesUseCase(trainingRepository)
     val saveExerciseUseCase = SaveExerciseUseCase(trainingRepository)
@@ -55,4 +66,7 @@ class AppContainer(
     val startSessionFromWorkoutUseCase = StartSessionFromWorkoutUseCase(trainingRepository)
     val logSessionSetUseCase = LogSessionSetUseCase(trainingRepository)
     val finishSessionUseCase = FinishSessionUseCase(trainingRepository)
+
+    val recalculateTargetsUseCase = RecalculateTargetsUseCase(nutritionRepository)
+    val saveManualTargetsUseCase = SaveManualTargetsUseCase(nutritionRepository)
 }
