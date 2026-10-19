@@ -14,10 +14,17 @@ import androidx.room.RoomDatabase
         SessionEntity::class,
         SessionExerciseEntity::class,
         SessionSetEntity::class,
+        BodyProfileEntity::class,
+        MacroTargetsEntity::class,
+        NutritionPlanEntity::class,
+        FoodItemEntity::class,
+        MealEntity::class,
+        MealEntryEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class FitiaDatabase : RoomDatabase() {
     abstract fun trainingDao(): TrainingDao
+    abstract fun nutritionDao(): NutritionDao
 }
