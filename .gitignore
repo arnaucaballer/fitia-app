@@ -1,6 +1,8 @@
 *.iml
 .gradle/
 /local.properties
+/.emulator.log
+/.emulator.pid
 /.idea/
 .DS_Store
 /build/
