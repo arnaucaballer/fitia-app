@@ -38,10 +38,10 @@ if [[ -z "${SERIAL}" ]]; then
     exit 1
   fi
   if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
-    echo "Sin permiso sobre /dev/kvm (hace falta el grupo kvm)." >&2
-    echo "Ejecuta una sola vez:  ./scripts/setup-wsl-emulator.sh" >&2
-    echo "Luego cierra la terminal (o: newgrp kvm) y vuelve a lanzar este script." >&2
-    echo "Alternativa: conecta un Android con depuración USB y vuelve a ejecutar." >&2
+    echo "Sin permiso sobre /dev/kvm." >&2
+    echo "Ejecuta:  ./scripts/setup-wsl-emulator.sh" >&2
+    echo "Luego:    ./scripts/run-fitia.sh" >&2
+    echo "Alternativa: teléfono con depuración USB + adb." >&2
     exit 1
   fi
 

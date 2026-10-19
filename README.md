@@ -27,7 +27,6 @@ Una sola vez (pide contraseña de sudo: grupo `kvm` + libs):
 
 ```bash
 ./scripts/setup-wsl-emulator.sh
-newgrp kvm   # o cierra y abre la terminal
 ```
 
 Después, cada vez:
