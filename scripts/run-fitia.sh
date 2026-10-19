@@ -55,8 +55,11 @@ if [[ -z "${SERIAL}" ]]; then
   fi
 
   echo "==> Arrancando emulador $FITIA_AVD (ventana WSLg)…"
-  # -no-audio avoids PulseAudio issues on minimal WSL images.
-  nohup emulator -avd "$FITIA_AVD" -netdelay none -netspeed full -gpu host -no-audio \
+  # -no-audio: minimal WSL often lacks PulseAudio.
+  # -gpu swiftshader_indirect: WSLg frequently cannot use host GPU for the emulator.
+  export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
+  nohup emulator -avd "$FITIA_AVD" -netdelay none -netspeed full \
+    -gpu swiftshader_indirect -no-audio \
     >"$ROOT_DIR/.emulator.log" 2>&1 &
   echo $! >"$ROOT_DIR/.emulator.pid"
   echo "    log: $ROOT_DIR/.emulator.log"
