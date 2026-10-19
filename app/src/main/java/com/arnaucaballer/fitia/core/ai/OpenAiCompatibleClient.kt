@@ -54,6 +54,7 @@ class OpenAiCompatibleClient {
         val body = buildJsonObject {
             put("model", request.model)
             put("messages", messagesToJson(request.messages))
+            put("max_tokens", request.maxTokens)
             if (request.tools.isNotEmpty()) {
                 put("tools", toolsToJson(request.tools))
             }
