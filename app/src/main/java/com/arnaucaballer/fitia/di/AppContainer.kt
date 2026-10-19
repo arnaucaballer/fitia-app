@@ -2,13 +2,18 @@ package com.arnaucaballer.fitia.di
 
 import android.content.Context
 import androidx.room.Room
+import com.arnaucaballer.fitia.core.ai.OpenAiCompatibleClient
 import com.arnaucaballer.fitia.core.database.FitiaDatabase
 import com.arnaucaballer.fitia.core.database.FitiaMigrations
+import com.arnaucaballer.fitia.feature.chat.domain.ChatOrchestrator
+import com.arnaucaballer.fitia.feature.chat.domain.FitiaToolExecutor
+import com.arnaucaballer.fitia.feature.chat.domain.FoodPhotoEstimator
 import com.arnaucaballer.fitia.feature.nutrition.data.OpenFoodFactsClient
 import com.arnaucaballer.fitia.feature.nutrition.data.RoomNutritionRepository
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionRepository
 import com.arnaucaballer.fitia.feature.nutrition.domain.RecalculateTargetsUseCase
 import com.arnaucaballer.fitia.feature.nutrition.domain.SaveManualTargetsUseCase
+import com.arnaucaballer.fitia.feature.settings.data.AiSettingsStore
 import com.arnaucaballer.fitia.feature.training.data.RoomTrainingRepository
 import com.arnaucaballer.fitia.feature.training.domain.DeleteExerciseUseCase
 import com.arnaucaballer.fitia.feature.training.domain.DeletePlanUseCase
@@ -45,6 +50,8 @@ class AppContainer(
         RoomNutritionRepository(database.nutritionDao())
 
     val openFoodFactsClient = OpenFoodFactsClient()
+    val aiSettingsStore = AiSettingsStore(context)
+    val openAiCompatibleClient = OpenAiCompatibleClient()
 
     val observeExercisesUseCase = ObserveExercisesUseCase(trainingRepository)
     val saveExerciseUseCase = SaveExerciseUseCase(trainingRepository)
@@ -69,4 +76,20 @@ class AppContainer(
 
     val recalculateTargetsUseCase = RecalculateTargetsUseCase(nutritionRepository)
     val saveManualTargetsUseCase = SaveManualTargetsUseCase(nutritionRepository)
+
+    private val toolExecutor = FitiaToolExecutor(
+        trainingRepository = trainingRepository,
+        nutritionRepository = nutritionRepository,
+        recalculateTargetsUseCase = recalculateTargetsUseCase,
+        saveManualTargetsUseCase = saveManualTargetsUseCase,
+    )
+
+    val chatOrchestrator = ChatOrchestrator(
+        client = openAiCompatibleClient,
+        toolExecutor = toolExecutor,
+        trainingRepository = trainingRepository,
+        nutritionRepository = nutritionRepository,
+    )
+
+    val foodPhotoEstimator = FoodPhotoEstimator(openAiCompatibleClient)
 }

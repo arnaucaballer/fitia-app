@@ -18,40 +18,46 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.arnaucaballer.fitia.feature.chat.ui.ChatScreen
 import com.arnaucaballer.fitia.feature.nutrition.ui.NutritionScreen
+import com.arnaucaballer.fitia.feature.settings.ui.SettingsScreen
 import com.arnaucaballer.fitia.feature.training.ui.TrainingScreen
+
+private const val SettingsRoute = "settings"
 
 @Composable
 fun FitiaApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val showBottomBar = currentDestination?.route != SettingsRoute
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                FitiaDestination.entries.forEach { destination ->
-                    val selected = currentDestination
-                        ?.hierarchy
-                        ?.any { it.route == destination.route } == true
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            if (showBottomBar) {
+                NavigationBar {
+                    FitiaDestination.entries.forEach { destination ->
+                        val selected = currentDestination
+                            ?.hierarchy
+                            ?.any { it.route == destination.route } == true
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = destination.icon,
-                                contentDescription = stringResource(destination.labelRes),
-                            )
-                        },
-                        label = { Text(stringResource(destination.labelRes)) },
-                    )
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = destination.icon,
+                                    contentDescription = stringResource(destination.labelRes),
+                                )
+                            },
+                            label = { Text(stringResource(destination.labelRes)) },
+                        )
+                    }
                 }
             }
         },
@@ -65,10 +71,15 @@ fun FitiaApp() {
                 TrainingScreen()
             }
             composable(FitiaDestination.Chat.route) {
-                ChatScreen()
+                ChatScreen(
+                    onOpenSettings = { navController.navigate(SettingsRoute) },
+                )
             }
             composable(FitiaDestination.Nutrition.route) {
                 NutritionScreen()
+            }
+            composable(SettingsRoute) {
+                SettingsScreen(onBack = { navController.popBackStack() })
             }
         }
     }

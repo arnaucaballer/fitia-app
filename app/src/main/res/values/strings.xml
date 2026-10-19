@@ -104,5 +104,16 @@
     <string name="goal_gain">Subir músculo</string>
     <string name="action_search">Buscar</string>
     <string name="settings">Ajustes</string>
+    <string name="settings_provider">Proveedor</string>
+    <string name="settings_api_key">Clave de API</string>
+    <string name="settings_model">Modelo</string>
+    <string name="settings_base_url">Base URL (opcional)</string>
+    <string name="settings_api_key_hint">La clave se guarda cifrada en el teléfono. No se sube a GitHub.</string>
+    <string name="chat_configure_api">Configura tu clave de API en Ajustes</string>
+    <string name="chat_missing_api_key">Falta la clave de API. Ábrela en Ajustes → Clave de API.</string>
+    <string name="chat_attach_food_photo">Foto de comida</string>
+    <string name="chat_confirm_food">Confirmar alimento</string>
+    <string name="nutrition_meal_name">Comida</string>
 </resources>
+
 
