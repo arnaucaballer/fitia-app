@@ -26,7 +26,16 @@ if [[ ! -d "$ANDROID_HOME" ]]; then
   exit 1
 fi
 
-# Optional locally extracted .so files (used when apt packages are not installed).
+# Qt / X11 extras for the emulator window on WSL (local extract and/or apt).
+EXTRA_LIBS=()
 if [[ -d "$HOME/.local/android-libs" ]]; then
-  export LD_LIBRARY_PATH="$HOME/.local/android-libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  EXTRA_LIBS+=("$HOME/.local/android-libs")
 fi
+if [[ -d "$ANDROID_HOME/emulator/lib64" ]]; then
+  EXTRA_LIBS+=("$ANDROID_HOME/emulator/lib64" "$ANDROID_HOME/emulator/lib64/qt/lib")
+fi
+if ((${#EXTRA_LIBS[@]})); then
+  joined="$(IFS=:; echo "${EXTRA_LIBS[*]}")"
+  export LD_LIBRARY_PATH="${joined}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
