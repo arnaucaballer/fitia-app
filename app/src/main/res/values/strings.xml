@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fitia</string>
+    <string name="nav_training">Entreno</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_nutrition">Alimentación</string>
+    <string name="training_title">Entreno</string>
+    <string name="training_placeholder">Aquí irán tus planes, entrenamientos y sesiones.</string>
+    <string name="chat_title">Chat</string>
+    <string name="chat_placeholder">Pregunta lo que quieras sobre entreno o alimentación.</string>
+    <string name="chat_input_hint">Escribe un mensaje…</string>
+    <string name="chat_send">Enviar</string>
+    <string name="nutrition_title">Alimentación</string>
+    <string name="nutrition_placeholder">Aquí irán tu perfil, macros y el diario del día.</string>
+    <string name="settings">Ajustes</string>
+</resources>
