@@ -154,4 +154,6 @@ class RoomNutritionRepository(
             ),
         )
     }
+
+    override fun observeDaysWithFood(): Flow<List<Long>> = dao.observeDaysWithFood()
 }

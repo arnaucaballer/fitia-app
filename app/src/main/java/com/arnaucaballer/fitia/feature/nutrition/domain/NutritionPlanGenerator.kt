@@ -74,7 +74,7 @@ class NutritionPlanGenerator(
         val result = client.complete(
             settings = settings,
             request = ChatCompletionRequest(
-                model = settings.model,
+                model = settings.effectiveModel,
                 messages = listOf(
                     ChatMessage.system("Nutricionista clínico. Solo JSON."),
                     ChatMessage(

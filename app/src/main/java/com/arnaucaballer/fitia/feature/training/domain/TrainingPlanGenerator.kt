@@ -41,7 +41,7 @@ class TrainingPlanGenerator(
         val result = client.complete(
             settings = settings,
             request = ChatCompletionRequest(
-                model = settings.model,
+                model = settings.effectiveModel,
                 messages = listOf(
                     ChatMessage.system("Eres un entrenador personal. Solo JSON válido."),
                     ChatMessage.user(prompt),

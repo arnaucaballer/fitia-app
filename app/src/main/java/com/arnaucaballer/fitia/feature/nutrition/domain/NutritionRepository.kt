@@ -30,4 +30,6 @@ interface NutritionRepository {
 
     fun observeWaterTotal(dayEpochDay: Long): Flow<Int>
     suspend fun addWater(dayEpochDay: Long, amountMl: Int)
+
+    fun observeDaysWithFood(): Flow<List<Long>>
 }

@@ -63,6 +63,10 @@ class NutritionHomeViewModel(
         selectedDay.value = selectedDay.value + delta
     }
 
+    fun selectDay(dayEpochDay: Long) {
+        selectedDay.value = dayEpochDay
+    }
+
     fun deleteEntry(entryId: Long) {
         viewModelScope.launch {
             repository.deleteEntry(entryId)

@@ -1,5 +1,6 @@
 package com.arnaucaballer.fitia.feature.nutrition.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,13 +40,17 @@ import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun NutritionHomeScreen(
+    selectedDayFlow: StateFlow<Long>,
+    onSelectedDayConsumed: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenTargets: () -> Unit,
     onOpenPlans: () -> Unit,
     onOpenFoods: () -> Unit,
+    onOpenCalendar: () -> Unit,
     onAddEntry: (Long) -> Unit,
     onFoodPhoto: () -> Unit,
     onCreatePlanWizard: () -> Unit,
@@ -57,6 +63,12 @@ fun NutritionHomeScreen(
         },
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val selectedDay by selectedDayFlow.collectAsStateWithLifecycle()
+    LaunchedEffect(selectedDay) {
+        if (selectedDay == Long.MIN_VALUE) return@LaunchedEffect
+        viewModel.selectDay(selectedDay)
+        onSelectedDayConsumed()
+    }
     val dateLabel = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
         .format(LocalDate.ofEpochDay(state.dayEpochDay))
     val totals = state.dayLog.totals
@@ -140,7 +152,11 @@ fun NutritionHomeScreen(
                         contentDescription = stringResource(R.string.nutrition_prev_day),
                     )
                 }
-                Text(dateLabel, style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = dateLabel,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.clickable(onClick = onOpenCalendar),
+                )
                 IconButton(onClick = { viewModel.shiftDay(1) }) {
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -148,6 +164,14 @@ fun NutritionHomeScreen(
                     )
                 }
             }
+        }
+
+        item {
+            FitiaSecondaryButton(
+                text = stringResource(R.string.nutrition_calendar),
+                onClick = onOpenCalendar,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         item {

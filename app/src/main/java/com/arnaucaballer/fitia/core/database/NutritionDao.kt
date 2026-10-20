@@ -99,4 +99,13 @@ interface NutritionDao {
 
     @Query("DELETE FROM water_logs WHERE id = :id")
     suspend fun deleteWaterLog(id: Long)
+
+    @Query(
+        """
+        SELECT DISTINCT m.dayEpochDay FROM meals m
+        INNER JOIN meal_entries e ON e.mealId = m.id
+        ORDER BY m.dayEpochDay DESC
+        """,
+    )
+    fun observeDaysWithFood(): Flow<List<Long>>
 }
