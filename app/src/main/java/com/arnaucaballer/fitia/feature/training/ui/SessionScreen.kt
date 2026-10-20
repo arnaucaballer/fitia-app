@@ -137,13 +137,13 @@ private fun SessionExerciseBlock(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(exercise.name, style = MaterialTheme.typography.titleMedium)
         exercise.sets.forEach { set ->
-            var weightText by rememberSaveable(set.id, set.weightKg) {
+            var weightText by rememberSaveable(set.id) {
                 mutableStateOf(set.weightKg?.toString().orEmpty())
             }
-            var repsText by rememberSaveable(set.id, set.reps) {
+            var repsText by rememberSaveable(set.id) {
                 mutableStateOf(set.reps?.toString().orEmpty())
             }
-            var completed by rememberSaveable(set.id, set.isCompleted) {
+            var completed by rememberSaveable(set.id) {
                 mutableStateOf(set.isCompleted)
             }
 

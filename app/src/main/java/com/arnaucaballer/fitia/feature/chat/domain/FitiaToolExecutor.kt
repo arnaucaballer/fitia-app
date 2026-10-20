@@ -200,6 +200,7 @@ class FitiaToolExecutor(
                             proteinPerKg = current?.proteinPerKg ?: 2.0,
                             fatPerKg = current?.fatPerKg ?: 0.8,
                             manualOverride = true,
+                            waterMlGoal = current?.waterMlGoal ?: 3000,
                         ),
                     )
                     """{"ok":true}"""

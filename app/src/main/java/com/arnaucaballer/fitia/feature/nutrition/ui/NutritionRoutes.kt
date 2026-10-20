@@ -7,6 +7,9 @@ object NutritionRoutes {
     const val Plans = "nutrition/plans"
     const val Foods = "nutrition/foods"
     const val AddEntry = "nutrition/add-entry/{mealId}"
+    const val FoodPhoto = "nutrition/food-photo"
+    const val PlanWizard = "nutrition/plan-wizard"
+    const val Calendar = "nutrition/calendar"
 
     fun addEntry(mealId: Long) = "nutrition/add-entry/$mealId"
 }

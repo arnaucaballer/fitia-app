@@ -24,7 +24,9 @@ import com.arnaucaballer.fitia.feature.training.domain.GetSessionUseCase
 import com.arnaucaballer.fitia.feature.training.domain.GetWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.LogSessionSetUseCase
 import com.arnaucaballer.fitia.feature.training.domain.ObserveActiveSessionUseCase
+import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionPlanGenerator
 import com.arnaucaballer.fitia.feature.training.domain.ObserveExercisesUseCase
+import com.arnaucaballer.fitia.feature.training.domain.ObserveGenericWorkoutsUseCase
 import com.arnaucaballer.fitia.feature.training.domain.ObservePlansUseCase
 import com.arnaucaballer.fitia.feature.training.domain.ObserveSessionsUseCase
 import com.arnaucaballer.fitia.feature.training.domain.ObserveWorkoutsUseCase
@@ -32,6 +34,7 @@ import com.arnaucaballer.fitia.feature.training.domain.SaveExerciseUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SavePlanUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SaveWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.StartSessionFromWorkoutUseCase
+import com.arnaucaballer.fitia.feature.training.domain.TrainingPlanGenerator
 import com.arnaucaballer.fitia.feature.training.domain.TrainingRepository
 
 class AppContainer(
@@ -41,7 +44,10 @@ class AppContainer(
         context.applicationContext,
         FitiaDatabase::class.java,
         "fitia.db",
-    ).addMigrations(FitiaMigrations.MIGRATION_1_2).build()
+    ).addMigrations(
+        FitiaMigrations.MIGRATION_1_2,
+        FitiaMigrations.MIGRATION_2_3,
+    ).build()
 
     val trainingRepository: TrainingRepository =
         RoomTrainingRepository(database.trainingDao())
@@ -58,6 +64,7 @@ class AppContainer(
     val deleteExerciseUseCase = DeleteExerciseUseCase(trainingRepository)
 
     val observeWorkoutsUseCase = ObserveWorkoutsUseCase(trainingRepository)
+    val observeGenericWorkoutsUseCase = ObserveGenericWorkoutsUseCase(trainingRepository)
     val getWorkoutUseCase = GetWorkoutUseCase(trainingRepository)
     val saveWorkoutUseCase = SaveWorkoutUseCase(trainingRepository)
     val deleteWorkoutUseCase = DeleteWorkoutUseCase(trainingRepository)
@@ -76,6 +83,18 @@ class AppContainer(
 
     val recalculateTargetsUseCase = RecalculateTargetsUseCase(nutritionRepository)
     val saveManualTargetsUseCase = SaveManualTargetsUseCase(nutritionRepository)
+
+    val trainingPlanGenerator = TrainingPlanGenerator(
+        client = openAiCompatibleClient,
+        settingsStore = aiSettingsStore,
+        trainingRepository = trainingRepository,
+    )
+    val nutritionPlanGenerator = NutritionPlanGenerator(
+        client = openAiCompatibleClient,
+        settingsStore = aiSettingsStore,
+        nutritionRepository = nutritionRepository,
+        recalculateTargetsUseCase = recalculateTargetsUseCase,
+    )
 
     private val toolExecutor = FitiaToolExecutor(
         trainingRepository = trainingRepository,

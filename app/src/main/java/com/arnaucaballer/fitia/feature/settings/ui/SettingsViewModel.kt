@@ -1,6 +1,7 @@
 package com.arnaucaballer.fitia.feature.settings.ui
 
 import androidx.lifecycle.ViewModel
+import com.arnaucaballer.fitia.core.ai.AiModelCatalog
 import com.arnaucaballer.fitia.core.ai.AiProviderPreset
 import com.arnaucaballer.fitia.core.ai.AiSettings
 import com.arnaucaballer.fitia.feature.settings.data.AiSettingsStore
@@ -17,7 +18,7 @@ class SettingsViewModel(
         model: String,
         baseUrlOverride: String,
     ) {
-        val resolvedModel = model.ifBlank { provider.defaultModel }
+        val resolvedModel = model.ifBlank { AiModelCatalog.AUTOMATIC_ID }
         store.update(
             AiSettings(
                 provider = provider,

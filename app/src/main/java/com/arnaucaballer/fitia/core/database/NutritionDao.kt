@@ -87,4 +87,25 @@ interface NutritionDao {
 
     @Query("SELECT * FROM meal_entries WHERE id = :id")
     suspend fun getEntry(id: Long): MealEntryEntity?
+
+    @Query("SELECT * FROM water_logs WHERE dayEpochDay = :day ORDER BY createdAtEpochMs ASC")
+    fun observeWaterLogs(day: Long): Flow<List<WaterLogEntity>>
+
+    @Query("SELECT COALESCE(SUM(amountMl), 0) FROM water_logs WHERE dayEpochDay = :day")
+    fun observeWaterTotal(day: Long): Flow<Int>
+
+    @Insert
+    suspend fun insertWaterLog(entity: WaterLogEntity): Long
+
+    @Query("DELETE FROM water_logs WHERE id = :id")
+    suspend fun deleteWaterLog(id: Long)
+
+    @Query(
+        """
+        SELECT DISTINCT m.dayEpochDay FROM meals m
+        INNER JOIN meal_entries e ON e.mealId = m.id
+        ORDER BY m.dayEpochDay DESC
+        """,
+    )
+    fun observeDaysWithFood(): Flow<List<Long>>
 }

@@ -15,4 +15,5 @@ data class MacroTargetsEntity(
     val proteinPerKg: Double,
     val fatPerKg: Double,
     val manualOverride: Boolean = false,
+    val waterMlGoal: Int = 3000,
 )

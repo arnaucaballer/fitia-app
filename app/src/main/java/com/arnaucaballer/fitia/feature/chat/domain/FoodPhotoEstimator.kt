@@ -13,7 +13,7 @@ import kotlinx.serialization.json.jsonPrimitive
 class FoodPhotoEstimator(
     private val client: OpenAiCompatibleClient,
 ) {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     suspend fun estimate(
         settings: AiSettings,
@@ -21,21 +21,71 @@ class FoodPhotoEstimator(
         base64Data: String,
     ): FoodPhotoEstimate {
         val prompt = """
-            Analiza la foto del alimento y responde SOLO con JSON válido:
+            Analiza la foto del alimento con la máxima precisión posible.
+            Identifica cada componente visible, estima gramos reales de la ración en la foto
+            y calcula macros usando densidades nutricionales típicas (no redondees a números
+            genéricos; sé específico, p. ej. 327 kcal no 300).
+            Responde SOLO con JSON válido:
             {"name":"string","grams":number,"calories":number,"protein_g":number,"carbs_g":number,"fat_g":number}
-            Estima una ración razonable. Sin markdown.
+            Sin markdown.
         """.trimIndent()
+        return completeEstimate(
+            settings = settings,
+            system = "Eres un estimador nutricional clínico. Máxima precisión en macros. Solo JSON.",
+            userText = prompt,
+            image = ChatContentPart.ImageBase64(mimeType, base64Data),
+        )
+    }
+
+    /**
+     * Recalculates macros after the user edits name/grams (and optionally keeps the photo).
+     */
+    suspend fun recalculate(
+        settings: AiSettings,
+        name: String,
+        grams: Double,
+        notes: String = "",
+        mimeType: String? = null,
+        base64Data: String? = null,
+    ): FoodPhotoEstimate {
+        val prompt = buildString {
+            appendLine("Recalcula macros con máxima precisión para:")
+            appendLine("Nombre/descripción: $name")
+            appendLine("Gramos: $grams")
+            if (notes.isNotBlank()) appendLine("Notas del usuario: $notes")
+            appendLine("Si hay foto, úsala para afinar la estimación.")
+            appendLine("Sé específico (no redondees a valores genéricos).")
+            appendLine("""Responde SOLO JSON: {"name":"string","grams":number,"calories":number,"protein_g":number,"carbs_g":number,"fat_g":number}""")
+        }
+        val image = if (mimeType != null && !base64Data.isNullOrBlank()) {
+            ChatContentPart.ImageBase64(mimeType, base64Data)
+        } else {
+            null
+        }
+        val estimated = completeEstimate(
+            settings = settings,
+            system = "Eres un estimador nutricional clínico. Máxima precisión. Solo JSON.",
+            userText = prompt,
+            image = image,
+        )
+        return if (grams > 0) estimated.copy(grams = grams) else estimated
+    }
+
+    private suspend fun completeEstimate(
+        settings: AiSettings,
+        system: String,
+        userText: String,
+        image: ChatContentPart.ImageBase64?,
+    ): FoodPhotoEstimate {
         val result = client.complete(
             settings = settings,
             request = ChatCompletionRequest(
-                model = settings.model,
+                model = settings.effectiveModel,
                 messages = listOf(
-                    ChatMessage.system("Eres un estimador nutricional. Solo JSON."),
-                    ChatMessage.user(
-                        text = prompt,
-                        image = ChatContentPart.ImageBase64(mimeType, base64Data),
-                    ),
+                    ChatMessage.system(system),
+                    ChatMessage.user(text = userText, image = image),
                 ),
+                maxTokens = 1_024,
             ),
         )
         val raw = result.message.text

@@ -34,18 +34,16 @@ class ProfileViewModel(
         recalculate: Boolean,
     ) {
         viewModelScope.launch {
-            val profile = BodyProfile(
-                weightKg = weightKg,
-                heightCm = heightCm,
-                ageYears = ageYears,
-                sex = sex,
-                activityLevel = activityLevel,
-                goal = goal,
-            )
-            if (recalculate) {
-                recalculateTargetsUseCase(profile, force = true)
-            } else {
-                recalculateTargetsUseCase(profile, force = false)
+            runCatching {
+                val profile = BodyProfile(
+                    weightKg = weightKg,
+                    heightCm = heightCm,
+                    ageYears = ageYears,
+                    sex = sex,
+                    activityLevel = activityLevel,
+                    goal = goal,
+                )
+                recalculateTargetsUseCase(profile, force = recalculate)
             }
         }
     }

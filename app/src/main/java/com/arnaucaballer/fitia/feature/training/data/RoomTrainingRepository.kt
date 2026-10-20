@@ -42,6 +42,9 @@ class RoomTrainingRepository(
     override fun observeWorkouts(): Flow<List<Workout>> =
         dao.observeWorkouts().map { list -> list.map { it.toDomainSummary() } }
 
+    override fun observeGenericWorkouts(): Flow<List<Workout>> =
+        dao.observeGenericWorkouts().map { list -> list.map { it.toDomainSummary() } }
+
     override suspend fun getWorkout(id: Long): Workout? {
         val workout = dao.getWorkout(id) ?: return null
         val links = dao.getWorkoutExercises(id)
@@ -79,6 +82,27 @@ class RoomTrainingRepository(
     override suspend fun deleteWorkout(id: Long) {
         val entity = dao.getWorkout(id) ?: return
         dao.deleteWorkout(entity)
+    }
+
+    override suspend fun copyGenericWorkoutIntoPlan(workoutId: Long, planId: Long): Long {
+        val source = getWorkout(workoutId) ?: error("Workout not found")
+        val copyId = saveWorkout(
+            source.copy(
+                id = 0,
+                planId = planId,
+                name = source.name,
+                createdAtEpochMs = 0,
+                exercises = source.exercises.map { exercise ->
+                    exercise.copy(
+                        id = 0,
+                        setTargets = exercise.setTargets.map { it.copy(id = 0) },
+                    )
+                },
+            ),
+        )
+        val plan = getPlan(planId) ?: return copyId
+        savePlan(plan.copy(workouts = plan.workouts + listOf(getWorkout(copyId)!!)))
+        return copyId
     }
 
     override fun observePlans(): Flow<List<TrainingPlan>> =
