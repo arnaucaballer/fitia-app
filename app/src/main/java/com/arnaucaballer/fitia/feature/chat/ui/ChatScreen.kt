@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arnaucaballer.fitia.R
 import com.arnaucaballer.fitia.design.FitiaPill
+import com.arnaucaballer.fitia.design.MarkdownText
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 
@@ -225,15 +226,25 @@ private fun ChatBubble(message: UiChatMessage) {
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = alignment,
     ) {
-        Text(
-            text = message.text,
-            color = fg,
-            style = MaterialTheme.typography.bodyLarge,
+        Box(
             modifier = Modifier
                 .widthIn(max = 320.dp)
                 .clip(shape)
                 .background(bg)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-        )
+        ) {
+            if (isUser) {
+                Text(
+                    text = message.text,
+                    color = fg,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            } else {
+                MarkdownText(
+                    markdown = message.text,
+                    color = fg,
+                )
+            }
+        }
     }
 }

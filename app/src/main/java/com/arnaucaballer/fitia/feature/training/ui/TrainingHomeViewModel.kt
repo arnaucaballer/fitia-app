@@ -7,6 +7,7 @@ import com.arnaucaballer.fitia.feature.training.domain.ObserveGenericWorkoutsUse
 import com.arnaucaballer.fitia.feature.training.domain.ObservePlansUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
@@ -17,15 +18,17 @@ class TrainingHomeViewModel(
 ) : ViewModel() {
 
     val uiState: StateFlow<TrainingHomeUiState> = combine(
-        observePlansUseCase(),
-        observeGenericWorkoutsUseCase(),
-        observeActiveSessionUseCase(),
+        observePlansUseCase().catch { emit(emptyList()) },
+        observeGenericWorkoutsUseCase().catch { emit(emptyList()) },
+        observeActiveSessionUseCase().catch { emit(null) },
     ) { plans, workouts, activeSession ->
         TrainingHomeUiState(
             plans = plans,
             genericWorkouts = workouts,
             activeSession = activeSession,
         )
+    }.catch {
+        emit(TrainingHomeUiState())
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),

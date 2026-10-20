@@ -60,7 +60,7 @@
     <string name="action_delete">Eliminar</string>
     <string name="action_see_all">Ver todo</string>
     <string name="chat_title">Chat</string>
-    <string name="chat_placeholder">Pregunta lo que quieras sobre entreno o alimentación.</string>
+    <string name="chat_placeholder">Cuéntame qué necesitas. Primero te preguntaré cómo lo quieres; si prefieres, dime «créalo tú» y lo haré.</string>
     <string name="chat_input_hint">Escribe un mensaje…</string>
     <string name="chat_send">Enviar</string>
     <string name="nutrition_title">Alimentación</string>

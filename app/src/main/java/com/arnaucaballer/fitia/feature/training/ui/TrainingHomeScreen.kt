@@ -1,7 +1,6 @@
 package com.arnaucaballer.fitia.feature.training.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,13 +49,16 @@ fun TrainingHomeScreen(
         },
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val plans = state.plans
+    val genericWorkouts = state.genericWorkouts
+    val activeSession = state.activeSession
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
+        item(key = "header") {
             Text(
                 text = stringResource(R.string.training_title),
                 style = MaterialTheme.typography.displaySmall,
@@ -69,20 +71,24 @@ fun TrainingHomeScreen(
             )
         }
 
-        state.activeSession?.let { session ->
-            item {
-                FitiaCard(onClick = { onOpenSession(session.id) }) {
+        if (activeSession != null) {
+            item(key = "active-session-${activeSession.id}") {
+                FitiaCard(onClick = { onOpenSession(activeSession.id) }) {
                     Text(
                         text = stringResource(R.string.training_active_session),
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelLarge,
                     )
-                    Text(session.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 6.dp))
+                    Text(
+                        text = activeSession.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
                 }
             }
         }
 
-        item {
+        item(key = "plans-header") {
             FitiaSectionHeader(
                 title = stringResource(R.string.training_section_plans),
                 actionLabel = stringResource(R.string.see_all),
@@ -90,15 +96,15 @@ fun TrainingHomeScreen(
             )
         }
 
-        item {
+        item(key = "generate-plan") {
             FitiaPrimaryButton(
                 text = stringResource(R.string.training_generate_plan_ai),
                 onClick = onGeneratePlan,
             )
         }
 
-        if (state.plans.isEmpty()) {
-            item {
+        if (plans.isEmpty()) {
+            item(key = "plans-empty") {
                 FitiaCard {
                     Text(
                         text = stringResource(R.string.training_empty_plans),
@@ -107,11 +113,17 @@ fun TrainingHomeScreen(
                 }
             }
         } else {
-            items(state.plans, key = { it.id }) { plan ->
+            items(
+                items = plans,
+                key = { plan -> "plan-${plan.id}" },
+            ) { plan ->
                 FitiaCard(onClick = { onOpenPlan(plan.id) }) {
                     Text(plan.name, style = MaterialTheme.typography.titleLarge)
                     Text(
-                        text = stringResource(R.string.training_plan_workouts_count, plan.workouts.size),
+                        text = stringResource(
+                            R.string.training_plan_workouts_count,
+                            plan.workouts.size,
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -119,7 +131,7 @@ fun TrainingHomeScreen(
             }
         }
 
-        item {
+        item(key = "workouts-header") {
             FitiaSectionHeader(
                 title = stringResource(R.string.training_section_generic_workouts),
                 actionLabel = stringResource(R.string.see_all),
@@ -127,8 +139,8 @@ fun TrainingHomeScreen(
             )
         }
 
-        if (state.genericWorkouts.isEmpty()) {
-            item {
+        if (genericWorkouts.isEmpty()) {
+            item(key = "workouts-empty") {
                 FitiaCard {
                     Text(
                         text = stringResource(R.string.training_empty_workouts),
@@ -137,7 +149,10 @@ fun TrainingHomeScreen(
                 }
             }
         } else {
-            items(state.genericWorkouts.take(5), key = { it.id }) { workout ->
+            items(
+                items = genericWorkouts.take(5),
+                key = { workout -> "workout-${workout.id}" },
+            ) { workout ->
                 FitiaCard(onClick = { onOpenWorkout(workout.id) }) {
                     Text(workout.name, style = MaterialTheme.typography.titleMedium)
                     Text(
@@ -150,7 +165,7 @@ fun TrainingHomeScreen(
             }
         }
 
-        item {
+        item(key = "secondary-actions") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
