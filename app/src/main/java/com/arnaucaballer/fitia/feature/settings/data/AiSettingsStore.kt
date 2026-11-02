@@ -3,6 +3,7 @@ package com.arnaucaballer.fitia.feature.settings.data
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.arnaucaballer.fitia.core.ai.AiModelCatalog
 import com.arnaucaballer.fitia.core.ai.AiProviderPreset
 import com.arnaucaballer.fitia.core.ai.AiSettings
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,8 +43,8 @@ class AiSettingsStore(
         return AiSettings(
             provider = provider,
             apiKey = prefs.getString(KEY_API_KEY, "").orEmpty(),
-            model = prefs.getString(KEY_MODEL, provider.defaultModel).orEmpty()
-                .ifBlank { provider.defaultModel },
+            model = prefs.getString(KEY_MODEL, AiModelCatalog.AUTOMATIC_ID).orEmpty()
+                .ifBlank { AiModelCatalog.AUTOMATIC_ID },
             baseUrlOverride = prefs.getString(KEY_BASE_URL, "").orEmpty(),
         )
     }

@@ -34,6 +34,7 @@ object MacroCalculator {
         val protein = proteinPerKg * profile.weightKg
         val fat = max(fatPerKg * profile.weightKg, calories * 0.2 / 9.0)
         val carbs = max(0.0, (calories - (protein * 4) - (fat * 9)) / 4.0)
+        val waterMl = (profile.weightKg * 35).roundToInt().coerceIn(2000, 5000)
         return MacroTargets(
             calories = calories,
             proteinGrams = protein.roundToOneDecimal(),
@@ -44,6 +45,7 @@ object MacroCalculator {
             proteinPerKg = proteinPerKg,
             fatPerKg = fatPerKg,
             manualOverride = false,
+            waterMlGoal = waterMl,
         )
     }
 

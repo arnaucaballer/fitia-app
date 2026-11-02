@@ -23,6 +23,13 @@ val FitiaTypography = Typography(
         lineHeight = 48.sp,
         letterSpacing = (-0.5).sp,
     ),
+    displaySmall = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 34.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.4).sp,
+    ),
     headlineLarge = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.SemiBold,

@@ -9,9 +9,12 @@ interface TrainingRepository {
     suspend fun deleteExercise(id: Long)
 
     fun observeWorkouts(): Flow<List<Workout>>
+    fun observeGenericWorkouts(): Flow<List<Workout>>
     suspend fun getWorkout(id: Long): Workout?
     suspend fun saveWorkout(workout: Workout): Long
     suspend fun deleteWorkout(id: Long)
+    /** Copies a generic workout into a plan-owned unique workout and links it. */
+    suspend fun copyGenericWorkoutIntoPlan(workoutId: Long, planId: Long): Long
 
     fun observePlans(): Flow<List<TrainingPlan>>
     suspend fun getPlan(id: Long): TrainingPlan?

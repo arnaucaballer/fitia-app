@@ -2,6 +2,8 @@ package com.arnaucaballer.fitia.feature.settings.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,11 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arnaucaballer.fitia.R
+import com.arnaucaballer.fitia.core.ai.AiModelCatalog
 import com.arnaucaballer.fitia.core.ai.AiProviderPreset
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -53,15 +57,21 @@ fun SettingsScreen(
 
     var provider by rememberSaveable { mutableStateOf(AiProviderPreset.OpenRouter.name) }
     var apiKey by rememberSaveable { mutableStateOf("") }
-    var model by rememberSaveable { mutableStateOf("") }
+    var model by rememberSaveable { mutableStateOf(AiModelCatalog.AUTOMATIC_ID) }
     var baseUrl by rememberSaveable { mutableStateOf("") }
+    var customModel by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(settings) {
         provider = settings.provider.name
         apiKey = settings.apiKey
-        model = settings.model
+        model = settings.model.ifBlank { AiModelCatalog.AUTOMATIC_ID }
         baseUrl = settings.baseUrlOverride
+        customModel = AiModelCatalog.optionsFor(settings.provider).none { it.id == model }
     }
+
+    val selectedProvider = runCatching { AiProviderPreset.valueOf(provider) }
+        .getOrDefault(AiProviderPreset.OpenRouter)
+    val modelOptions = AiModelCatalog.optionsFor(selectedProvider)
 
     Scaffold(
         modifier = modifier,
@@ -88,18 +98,19 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.settings_provider))
-            AiProviderPreset.entries.forEach { preset ->
-                FilterChip(
-                    selected = provider == preset.name,
-                    onClick = {
-                        provider = preset.name
-                        if (model.isBlank() || AiProviderPreset.entries.any { it.defaultModel == model }) {
-                            model = preset.defaultModel
-                        }
-                    },
-                    label = { Text(preset.displayName) },
-                    modifier = Modifier.padding(end = 8.dp),
-                )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AiProviderPreset.entries.forEach { preset ->
+                    FilterChip(
+                        selected = provider == preset.name,
+                        onClick = {
+                            provider = preset.name
+                            if (!customModel) {
+                                model = AiModelCatalog.AUTOMATIC_ID
+                            }
+                        },
+                        label = { Text(preset.displayName) },
+                    )
+                }
             }
 
             OutlinedTextField(
@@ -110,13 +121,43 @@ fun SettingsScreen(
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
             )
-            OutlinedTextField(
-                value = model,
-                onValueChange = { model = it },
-                label = { Text(stringResource(R.string.settings_model)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+
+            Text(stringResource(R.string.settings_model), style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = stringResource(R.string.settings_model_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
             )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                modelOptions.forEach { option ->
+                    FilterChip(
+                        selected = !customModel && model == option.id,
+                        onClick = {
+                            customModel = false
+                            model = option.id
+                        },
+                        label = { Text(option.label) },
+                    )
+                }
+                FilterChip(
+                    selected = customModel,
+                    onClick = { customModel = true },
+                    label = { Text(stringResource(R.string.settings_model_custom)) },
+                )
+            }
+            if (customModel) {
+                OutlinedTextField(
+                    value = model,
+                    onValueChange = { model = it },
+                    label = { Text(stringResource(R.string.settings_model_id)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+            }
+
             OutlinedTextField(
                 value = baseUrl,
                 onValueChange = { baseUrl = it },
@@ -129,9 +170,9 @@ fun SettingsScreen(
             Button(
                 onClick = {
                     viewModel.save(
-                        provider = AiProviderPreset.valueOf(provider),
+                        provider = selectedProvider,
                         apiKey = apiKey,
-                        model = model,
+                        model = if (customModel) model else model.ifBlank { AiModelCatalog.AUTOMATIC_ID },
                         baseUrlOverride = baseUrl,
                     )
                     onBack()

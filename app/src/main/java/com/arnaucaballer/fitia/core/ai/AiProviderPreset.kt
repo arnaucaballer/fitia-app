@@ -4,15 +4,19 @@ enum class AiProviderPreset(
     val displayName: String,
     val baseUrl: String,
     val defaultModel: String,
+    /** Resolved when the user picks "Automático". */
+    val autoModel: String,
 ) {
     OpenRouter(
         displayName = "OpenRouter",
         baseUrl = "https://openrouter.ai/api/v1",
-        defaultModel = "google/gemini-2.5-flash",
+        defaultModel = AiModelCatalog.AUTOMATIC_ID,
+        autoModel = "openrouter/auto",
     ),
     OpenCode(
         displayName = "OpenCode",
         baseUrl = "https://opencode.ai/inference/openai/v1",
-        defaultModel = "kimi-k2.6",
+        defaultModel = AiModelCatalog.AUTOMATIC_ID,
+        autoModel = "kimi-k2.6",
     ),
 }

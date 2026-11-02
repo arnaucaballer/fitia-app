@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Extra inset so OEM masks never clip the Fitia mark or wordmark. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_foreground_bitmap"
+    android:insetLeft="4%"
+    android:insetTop="4%"
+    android:insetRight="4%"
+    android:insetBottom="4%" />

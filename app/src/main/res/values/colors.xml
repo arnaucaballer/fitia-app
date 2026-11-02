@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#1B7A4E</color>
+    <color name="ic_launcher_background">#0A0A0A</color>
+    <color name="fitia_orange">#FF6A00</color>
+    <color name="fitia_white">#F7F7F7</color>
 </resources>

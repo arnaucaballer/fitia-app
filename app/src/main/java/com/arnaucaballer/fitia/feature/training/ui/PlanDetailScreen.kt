@@ -56,8 +56,9 @@ fun PlanDetailScreen(
             PlanDetailViewModel(
                 planId = planId,
                 getPlanUseCase = c.getPlanUseCase,
-                observeWorkoutsUseCase = c.observeWorkoutsUseCase,
+                observeGenericWorkoutsUseCase = c.observeGenericWorkoutsUseCase,
                 savePlanUseCase = c.savePlanUseCase,
+                trainingRepository = c.trainingRepository,
             )
         },
     )

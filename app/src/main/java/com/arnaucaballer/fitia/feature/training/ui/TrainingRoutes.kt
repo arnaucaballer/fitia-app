@@ -9,6 +9,7 @@ object TrainingRoutes {
     const val PlanDetail = "training/plan/{planId}"
     const val Session = "training/session/{sessionId}"
     const val History = "training/history"
+    const val GeneratePlan = "training/generate-plan"
 
     fun workoutDetail(workoutId: Long) = "training/workout/$workoutId"
     fun planDetail(planId: Long) = "training/plan/$planId"

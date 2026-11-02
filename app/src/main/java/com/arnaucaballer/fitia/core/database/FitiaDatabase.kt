@@ -20,8 +20,9 @@ import androidx.room.RoomDatabase
         FoodItemEntity::class,
         MealEntity::class,
         MealEntryEntity::class,
+        WaterLogEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class FitiaDatabase : RoomDatabase() {

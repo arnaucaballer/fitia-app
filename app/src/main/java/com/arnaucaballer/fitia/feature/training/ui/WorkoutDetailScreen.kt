@@ -188,10 +188,10 @@ private fun SetTargetRow(
     reps: Int?,
     onCommit: (weightKg: Double?, reps: Int?) -> Unit,
 ) {
-    var weightText by rememberSaveable(setNumber, weightKg) {
+    var weightText by rememberSaveable(setNumber) {
         mutableStateOf(weightKg?.toString().orEmpty())
     }
-    var repsText by rememberSaveable(setNumber, reps) {
+    var repsText by rememberSaveable(setNumber) {
         mutableStateOf(reps?.toString().orEmpty())
     }
 

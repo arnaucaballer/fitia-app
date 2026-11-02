@@ -6,6 +6,6 @@ import com.arnaucaballer.fitia.feature.training.domain.Workout
 
 data class TrainingHomeUiState(
     val plans: List<TrainingPlan> = emptyList(),
-    val workouts: List<Workout> = emptyList(),
+    val genericWorkouts: List<Workout> = emptyList(),
     val activeSession: TrainingSession? = null,
 )

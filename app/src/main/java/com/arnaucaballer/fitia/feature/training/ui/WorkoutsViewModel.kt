@@ -3,7 +3,7 @@ package com.arnaucaballer.fitia.feature.training.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnaucaballer.fitia.feature.training.domain.DeleteWorkoutUseCase
-import com.arnaucaballer.fitia.feature.training.domain.ObserveWorkoutsUseCase
+import com.arnaucaballer.fitia.feature.training.domain.ObserveGenericWorkoutsUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SaveWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.StartSessionFromWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.Workout
@@ -16,13 +16,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class WorkoutsViewModel(
-    observeWorkoutsUseCase: ObserveWorkoutsUseCase,
+    observeGenericWorkoutsUseCase: ObserveGenericWorkoutsUseCase,
     private val saveWorkoutUseCase: SaveWorkoutUseCase,
     private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
     private val startSessionFromWorkoutUseCase: StartSessionFromWorkoutUseCase,
 ) : ViewModel() {
 
-    val workouts: StateFlow<List<Workout>> = observeWorkoutsUseCase().stateIn(
+    val workouts: StateFlow<List<Workout>> = observeGenericWorkoutsUseCase().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList(),

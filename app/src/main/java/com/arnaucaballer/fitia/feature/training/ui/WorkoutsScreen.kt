@@ -52,7 +52,7 @@ fun WorkoutsScreen(
     val viewModel: WorkoutsViewModel = viewModel(
         factory = fitiaViewModelFactory(container) { c ->
             WorkoutsViewModel(
-                observeWorkoutsUseCase = c.observeWorkoutsUseCase,
+                observeGenericWorkoutsUseCase = c.observeGenericWorkoutsUseCase,
                 saveWorkoutUseCase = c.saveWorkoutUseCase,
                 deleteWorkoutUseCase = c.deleteWorkoutUseCase,
                 startSessionFromWorkoutUseCase = c.startSessionFromWorkoutUseCase,

@@ -39,6 +39,7 @@ internal fun WorkoutEntity.toDomainSummary(): Workout = Workout(
     id = id,
     name = name,
     notes = notes,
+    planId = planId,
     createdAtEpochMs = createdAtEpochMs,
 )
 
@@ -46,6 +47,7 @@ internal fun Workout.toEntity(): WorkoutEntity = WorkoutEntity(
     id = id,
     name = name.trim(),
     notes = notes.trim(),
+    planId = planId,
     createdAtEpochMs = createdAtEpochMs,
 )
 
