@@ -3,10 +3,7 @@ package com.arnaucaballer.fitia.feature.nutrition.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.arnaucaballer.fitia.R
+import com.arnaucaballer.fitia.core.images.ImageScaling
 import com.arnaucaballer.fitia.design.FitiaPrimaryButton
 import com.arnaucaballer.fitia.design.FitiaSecondaryButton
 import com.arnaucaballer.fitia.di.fitiaContainer
@@ -76,10 +74,10 @@ fun FoodPhotoScreen(
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    val bitmap = decodeBitmap(context, uri)
-                    val scaled = scaleBitmap(bitmap, 1280)
+                    val bitmap = ImageScaling.decode(context, uri, 1024)
                     val stream = ByteArrayOutputStream()
-                    scaled.compress(Bitmap.CompressFormat.JPEG, 85, stream)
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 75, stream)
+                    if (!bitmap.isRecycled) bitmap.recycle()
                     val base64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
                     val settings = container.aiSettingsStore.settings.value
                     base64 to container.foodPhotoEstimator.estimate(settings, "image/jpeg", base64)
@@ -231,25 +229,4 @@ fun FoodPhotoScreen(
             },
         )
     }
-}
-
-private fun decodeBitmap(context: android.content.Context, uri: Uri): Bitmap {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
-    } else {
-        @Suppress("DEPRECATION")
-        MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-    }
-}
-
-private fun scaleBitmap(source: Bitmap, maxSide: Int): Bitmap {
-    val largest = maxOf(source.width, source.height)
-    if (largest <= maxSide) return source
-    val scale = maxSide.toFloat() / largest.toFloat()
-    return Bitmap.createScaledBitmap(
-        source,
-        (source.width * scale).toInt().coerceAtLeast(1),
-        (source.height * scale).toInt().coerceAtLeast(1),
-        true,
-    )
 }

@@ -23,13 +23,18 @@ interface NutritionRepository {
     fun observeDayLog(dayEpochDay: Long): Flow<DayLog>
     suspend fun ensureDefaultMeals(dayEpochDay: Long)
     suspend fun addMeal(dayEpochDay: Long, name: String): Long
+    suspend fun renameMeal(mealId: Long, name: String)
     suspend fun deleteMeal(mealId: Long)
+    suspend fun restoreMeal(meal: Meal)
     suspend fun addEntry(entry: MealEntry): Long
     suspend fun updateEntry(entry: MealEntry)
     suspend fun deleteEntry(entryId: Long)
 
     fun observeWaterTotal(dayEpochDay: Long): Flow<Int>
+    fun observeWaterLogs(dayEpochDay: Long): Flow<List<WaterLog>>
     suspend fun addWater(dayEpochDay: Long, amountMl: Int)
+    suspend fun deleteWaterLog(id: Long)
+    suspend fun restoreWaterLog(log: WaterLog)
 
     fun observeDaysWithFood(): Flow<List<Long>>
 }

@@ -1,9 +1,6 @@
 package com.arnaucaballer.fitia.feature.nutrition.ui
 
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.os.Build
-import android.provider.MediaStore
 import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.arnaucaballer.fitia.core.images.ImageScaling
 import com.arnaucaballer.fitia.R
 import com.arnaucaballer.fitia.design.FitiaPrimaryButton
 import com.arnaucaballer.fitia.design.FitiaSecondaryButton
@@ -52,7 +50,9 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.BodyProfile
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionGoal
 import com.arnaucaballer.fitia.feature.nutrition.domain.Sex
 import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -81,26 +81,27 @@ fun NutritionPlanWizardScreen(
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        runCatching {
-            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
-            } else {
-                @Suppress("DEPRECATION")
-                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-            }
-            val scaled = scaleBitmap(bitmap, 1280)
-            val stream = ByteArrayOutputStream()
-            scaled.compress(Bitmap.CompressFormat.JPEG, 85, stream)
-            val photo = BodyPhotoInput(
-                mimeType = "image/jpeg",
-                base64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP),
-                label = pendingSlot,
-            )
-            when (pendingSlot) {
-                "side" -> side = photo
-                "back" -> back = photo
-                else -> front = photo
-            }
+        val slot = pendingSlot
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val bitmap = ImageScaling.decode(context, uri, 1024)
+                    val stream = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 75, stream)
+                    if (!bitmap.isRecycled) bitmap.recycle()
+                    BodyPhotoInput(
+                        mimeType = "image/jpeg",
+                        base64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP),
+                        label = slot,
+                    )
+                }
+            }.onSuccess { photo ->
+                when (slot) {
+                    "side" -> side = photo
+                    "back" -> back = photo
+                    else -> front = photo
+                }
+            }.onFailure { error = it.message ?: "Error" }
         }
     }
 
@@ -249,16 +250,4 @@ fun NutritionPlanWizardScreen(
             }
         }
     }
-}
-
-private fun scaleBitmap(source: Bitmap, maxSide: Int): Bitmap {
-    val largest = maxOf(source.width, source.height)
-    if (largest <= maxSide) return source
-    val scale = maxSide.toFloat() / largest.toFloat()
-    return Bitmap.createScaledBitmap(
-        source,
-        (source.width * scale).toInt().coerceAtLeast(1),
-        (source.height * scale).toInt().coerceAtLeast(1),
-        true,
-    )
 }

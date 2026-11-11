@@ -48,7 +48,8 @@ class NutritionPlanGenerator(
         }
 
         val prompt = """
-            Eres un nutricionista. Con el formulario y las fotos del físico, ajusta el plan.
+            Eres nutricionista de culturismo. Con el formulario y las fotos del físico, ajusta el plan
+            dentro de los rangos de culturismo que van después de los datos, sin bajar de una ingesta segura.
             Responde SOLO JSON:
             {
               "plan_name":"string",
@@ -63,7 +64,7 @@ class NutritionPlanGenerator(
             Datos:
             $formSummary
             Sin markdown.
-        """.trimIndent()
+        """.trimIndent() + "\n" + BodybuildingNutritionKnowledge.forPlanGeneration()
 
         val parts = mutableListOf<ChatContentPart>(ChatContentPart.Text(prompt))
         photos.forEach { photo ->
@@ -76,7 +77,7 @@ class NutritionPlanGenerator(
             request = ChatCompletionRequest(
                 model = settings.effectiveModel,
                 messages = listOf(
-                    ChatMessage.system("Nutricionista clínico. Solo JSON."),
+                    ChatMessage.system("Nutricionista de culturismo. Solo JSON, dentro de los rangos indicados."),
                     ChatMessage(
                         role = com.arnaucaballer.fitia.core.ai.ChatRole.User,
                         parts = parts,

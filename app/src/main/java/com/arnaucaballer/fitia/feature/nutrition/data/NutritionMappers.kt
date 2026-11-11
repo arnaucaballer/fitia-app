@@ -6,6 +6,7 @@ import com.arnaucaballer.fitia.core.database.MacroTargetsEntity
 import com.arnaucaballer.fitia.core.database.MealEntity
 import com.arnaucaballer.fitia.core.database.MealEntryEntity
 import com.arnaucaballer.fitia.core.database.NutritionPlanEntity
+import com.arnaucaballer.fitia.core.database.WaterLogEntity
 import com.arnaucaballer.fitia.feature.nutrition.domain.ActivityLevel
 import com.arnaucaballer.fitia.feature.nutrition.domain.BodyProfile
 import com.arnaucaballer.fitia.feature.nutrition.domain.FoodItem
@@ -15,6 +16,7 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.MealEntry
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionGoal
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionPlan
 import com.arnaucaballer.fitia.feature.nutrition.domain.Sex
+import com.arnaucaballer.fitia.feature.nutrition.domain.WaterLog
 
 internal fun BodyProfileEntity.toDomain(): BodyProfile = BodyProfile(
     weightKg = weightKg,
@@ -128,6 +130,20 @@ internal fun MealEntryEntity.toDomain(): MealEntry = MealEntry(
     proteinGrams = proteinGrams,
     carbsGrams = carbsGrams,
     fatGrams = fatGrams,
+)
+
+internal fun WaterLogEntity.toDomain(): WaterLog = WaterLog(
+    id = id,
+    dayEpochDay = dayEpochDay,
+    amountMl = amountMl,
+    createdAtEpochMs = createdAtEpochMs,
+)
+
+internal fun WaterLog.toEntity(): WaterLogEntity = WaterLogEntity(
+    id = id,
+    dayEpochDay = dayEpochDay,
+    amountMl = amountMl,
+    createdAtEpochMs = createdAtEpochMs,
 )
 
 internal fun MealEntry.toEntity(): MealEntryEntity = MealEntryEntity(

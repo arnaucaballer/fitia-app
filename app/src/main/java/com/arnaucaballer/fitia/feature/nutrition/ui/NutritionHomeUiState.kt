@@ -4,6 +4,7 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.BodyProfile
 import com.arnaucaballer.fitia.feature.nutrition.domain.DayLog
 import com.arnaucaballer.fitia.feature.nutrition.domain.MacroTargets
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionPlan
+import com.arnaucaballer.fitia.feature.nutrition.domain.WaterLog
 import java.time.LocalDate
 
 data class NutritionHomeUiState(
@@ -13,4 +14,5 @@ data class NutritionHomeUiState(
     val profile: BodyProfile? = null,
     val plans: List<NutritionPlan> = emptyList(),
     val waterMl: Int = 0,
+    val waterLogs: List<WaterLog> = emptyList(),
 )

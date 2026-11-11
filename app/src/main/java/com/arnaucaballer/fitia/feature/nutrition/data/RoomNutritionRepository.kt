@@ -1,5 +1,6 @@
 package com.arnaucaballer.fitia.feature.nutrition.data
 
+import com.arnaucaballer.fitia.core.database.DayMealStateEntity
 import com.arnaucaballer.fitia.core.database.MealEntity
 import com.arnaucaballer.fitia.core.database.NutritionDao
 import com.arnaucaballer.fitia.core.database.WaterLogEntity
@@ -7,9 +8,11 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.BodyProfile
 import com.arnaucaballer.fitia.feature.nutrition.domain.DayLog
 import com.arnaucaballer.fitia.feature.nutrition.domain.FoodItem
 import com.arnaucaballer.fitia.feature.nutrition.domain.MacroTargets
+import com.arnaucaballer.fitia.feature.nutrition.domain.Meal
 import com.arnaucaballer.fitia.feature.nutrition.domain.MealEntry
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionPlan
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionRepository
+import com.arnaucaballer.fitia.feature.nutrition.domain.WaterLog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -102,16 +105,19 @@ class RoomNutritionRepository(
     }
 
     override suspend fun ensureDefaultMeals(dayEpochDay: Long) {
-        if (dao.getMeals(dayEpochDay).isNotEmpty()) return
-        listOf("Desayuno", "Comida", "Cena", "Snacks").forEachIndexed { index, name ->
-            dao.upsertMeal(
-                MealEntity(
-                    dayEpochDay = dayEpochDay,
-                    name = name,
-                    sortOrder = index,
-                ),
-            )
+        if (dao.isDayMealsInitialized(dayEpochDay)) return
+        if (dao.getMeals(dayEpochDay).isEmpty()) {
+            listOf("Desayuno", "Comida", "Cena", "Snacks").forEachIndexed { index, name ->
+                dao.upsertMeal(
+                    MealEntity(
+                        dayEpochDay = dayEpochDay,
+                        name = name,
+                        sortOrder = index,
+                    ),
+                )
+            }
         }
+        dao.upsertDayMealState(DayMealStateEntity(dayEpochDay = dayEpochDay, initialized = true))
     }
 
     override suspend fun addMeal(dayEpochDay: Long, name: String): Long {
@@ -125,9 +131,30 @@ class RoomNutritionRepository(
         )
     }
 
+    override suspend fun renameMeal(mealId: Long, name: String) {
+        val entity = dao.getMeal(mealId) ?: return
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        dao.upsertMeal(entity.copy(name = trimmed))
+    }
+
     override suspend fun deleteMeal(mealId: Long) {
         val entity = dao.getMeal(mealId) ?: return
         dao.deleteMeal(entity)
+    }
+
+    override suspend fun restoreMeal(meal: Meal) {
+        dao.upsertMeal(
+            MealEntity(
+                id = meal.id,
+                dayEpochDay = meal.dayEpochDay,
+                name = meal.name,
+                sortOrder = meal.sortOrder,
+            ),
+        )
+        meal.entries.forEach { entry ->
+            dao.upsertEntry(entry.toEntity())
+        }
     }
 
     override suspend fun addEntry(entry: MealEntry): Long = dao.upsertEntry(entry.toEntity())
@@ -144,6 +171,9 @@ class RoomNutritionRepository(
     override fun observeWaterTotal(dayEpochDay: Long): Flow<Int> =
         dao.observeWaterTotal(dayEpochDay)
 
+    override fun observeWaterLogs(dayEpochDay: Long): Flow<List<WaterLog>> =
+        dao.observeWaterLogs(dayEpochDay).map { list -> list.map { it.toDomain() } }
+
     override suspend fun addWater(dayEpochDay: Long, amountMl: Int) {
         if (amountMl == 0) return
         dao.insertWaterLog(
@@ -153,6 +183,14 @@ class RoomNutritionRepository(
                 createdAtEpochMs = System.currentTimeMillis(),
             ),
         )
+    }
+
+    override suspend fun deleteWaterLog(id: Long) {
+        dao.deleteWaterLog(id)
+    }
+
+    override suspend fun restoreWaterLog(log: WaterLog) {
+        dao.upsertWaterLog(log.toEntity())
     }
 
     override fun observeDaysWithFood(): Flow<List<Long>> = dao.observeDaysWithFood()

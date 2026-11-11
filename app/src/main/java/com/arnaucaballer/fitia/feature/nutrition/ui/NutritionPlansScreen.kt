@@ -13,14 +13,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arnaucaballer.fitia.R
+import com.arnaucaballer.fitia.design.FitiaCard
+import com.arnaucaballer.fitia.design.FitiaSecondaryButton
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import com.arnaucaballer.fitia.feature.training.ui.NameInputDialog
@@ -91,6 +92,7 @@ fun NutritionPlansScreen(
                 }
             }
             items(plans, key = { it.id }) { plan ->
+                FitiaCard {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -109,15 +111,17 @@ fun NutritionPlansScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    TextButton(onClick = { viewModel.apply(plan.id) }) {
-                        Text(stringResource(R.string.nutrition_apply_plan))
-                    }
+                    FitiaSecondaryButton(
+                        text = stringResource(R.string.nutrition_apply_plan),
+                        onClick = { viewModel.apply(plan.id) },
+                    )
                     IconButton(onClick = { viewModel.delete(plan.id) }) {
                         Icon(
                             Icons.Outlined.Delete,
                             contentDescription = stringResource(R.string.action_delete),
                         )
                     }
+                }
                 }
             }
         }
