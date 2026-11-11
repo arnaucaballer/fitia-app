@@ -35,14 +35,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arnaucaballer.fitia.R
+import com.arnaucaballer.fitia.design.FitiaPrimaryButton
+import com.arnaucaballer.fitia.design.FitiaSecondaryButton
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlansScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)? = null,
     onOpenPlan: (Long) -> Unit,
+    onGeneratePlan: (() -> Unit)? = null,
+    onFollowPlan: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val container = LocalContext.current.fitiaContainer()
@@ -50,28 +54,33 @@ fun PlansScreen(
         factory = fitiaViewModelFactory(container) { c ->
             PlansViewModel(
                 observePlansUseCase = c.observePlansUseCase,
+                observeActiveTrainingPlanUseCase = c.observeActiveTrainingPlanUseCase,
                 savePlanUseCase = c.savePlanUseCase,
                 deletePlanUseCase = c.deletePlanUseCase,
+                setActiveTrainingPlanUseCase = c.setActiveTrainingPlanUseCase,
             )
         },
     )
     val plans by viewModel.plans.collectAsStateWithLifecycle()
+    val activePlanId by viewModel.activePlanId.collectAsStateWithLifecycle()
     var showCreate by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.training_plans_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-            )
+            if (onBack != null) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.training_plans_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back),
+                            )
+                        }
+                    },
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreate = true }) {
@@ -83,9 +92,24 @@ fun PlansScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(24.dp),
+            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            item(key = "create") {
+                FitiaPrimaryButton(
+                    text = stringResource(R.string.training_create_plan),
+                    onClick = { showCreate = true },
+                )
+            }
+            if (onGeneratePlan != null) {
+                item {
+                    FitiaSecondaryButton(
+                        text = stringResource(R.string.training_generate_plan_ai),
+                        onClick = onGeneratePlan,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             if (plans.isEmpty()) {
                 item {
                     Text(
@@ -99,11 +123,62 @@ fun PlansScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onOpenPlan(plan.id) }
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(plan.name, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = stringResource(R.string.training_plan_badge),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        Text(
+                            text = plan.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                        Text(
+                            text = if (plan.workouts.isEmpty()) {
+                                stringResource(R.string.training_plan_no_workouts)
+                            } else {
+                                stringResource(
+                                    R.string.training_plan_workouts_count,
+                                    plan.workouts.size,
+                                ) + " · " + plan.workouts.joinToString(
+                                    separator = ", ",
+                                    limit = 3,
+                                    truncated = "…",
+                                ) { it.name }
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                        if (onFollowPlan != null && plan.workouts.isNotEmpty()) {
+                            if (activePlanId == plan.id) {
+                                Text(
+                                    text = stringResource(R.string.training_follow_plan_active_short),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                                FitiaSecondaryButton(
+                                    text = stringResource(R.string.training_unfollow_plan),
+                                    onClick = viewModel::stopFollowingPlan,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                )
+                            } else {
+                                FitiaSecondaryButton(
+                                    text = stringResource(R.string.training_follow_plan),
+                                    onClick = { viewModel.followPlan(plan.id, onFollowPlan) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                )
+                            }
+                        }
                     }
                     IconButton(onClick = { viewModel.deletePlan(plan.id) }) {
                         Icon(

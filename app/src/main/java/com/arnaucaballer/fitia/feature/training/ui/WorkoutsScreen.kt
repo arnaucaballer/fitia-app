@@ -37,13 +37,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arnaucaballer.fitia.R
+import com.arnaucaballer.fitia.design.FitiaPrimaryButton
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutsScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)? = null,
     onOpenWorkout: (Long) -> Unit,
     onOpenSession: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -52,7 +53,7 @@ fun WorkoutsScreen(
     val viewModel: WorkoutsViewModel = viewModel(
         factory = fitiaViewModelFactory(container) { c ->
             WorkoutsViewModel(
-                observeGenericWorkoutsUseCase = c.observeGenericWorkoutsUseCase,
+                observeWorkoutsUseCase = c.observeWorkoutsUseCase,
                 saveWorkoutUseCase = c.saveWorkoutUseCase,
                 deleteWorkoutUseCase = c.deleteWorkoutUseCase,
                 startSessionFromWorkoutUseCase = c.startSessionFromWorkoutUseCase,
@@ -65,21 +66,26 @@ fun WorkoutsScreen(
     LaunchedEffect(Unit) {
         viewModel.sessionStarted.collect(onOpenSession)
     }
+    LaunchedEffect(Unit) {
+        viewModel.created.collect(onOpenWorkout)
+    }
 
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.training_workouts_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-            )
+            if (onBack != null) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.training_workouts_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back),
+                            )
+                        }
+                    },
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreate = true }) {
@@ -91,9 +97,15 @@ fun WorkoutsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(24.dp),
+            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            item(key = "create") {
+                FitiaPrimaryButton(
+                    text = stringResource(R.string.training_new_workout),
+                    onClick = { showCreate = true },
+                )
+            }
             if (workouts.isEmpty()) {
                 item {
                     Text(
@@ -112,6 +124,19 @@ fun WorkoutsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(workout.name, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = if (workout.isGeneric) {
+                                stringResource(R.string.training_workout_type_generic)
+                            } else {
+                                stringResource(R.string.training_workout_type_plan_only)
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (workout.isGeneric) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                        )
                         if (workout.notes.isNotBlank()) {
                             Text(
                                 text = workout.notes,

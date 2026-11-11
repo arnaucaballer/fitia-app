@@ -18,11 +18,7 @@ fun TrainingScreen(modifier: Modifier = Modifier) {
         modifier = modifier,
     ) {
         composable(TrainingRoutes.Home) {
-            TrainingHomeScreen(
-                onOpenPlans = { navController.navigate(TrainingRoutes.Plans) },
-                onOpenWorkouts = { navController.navigate(TrainingRoutes.Workouts) },
-                onOpenExercises = { navController.navigate(TrainingRoutes.Exercises) },
-                onOpenHistory = { navController.navigate(TrainingRoutes.History) },
+            TrainingHubScreen(
                 onOpenPlan = { id -> navController.navigate(TrainingRoutes.planDetail(id)) },
                 onOpenWorkout = { id -> navController.navigate(TrainingRoutes.workoutDetail(id)) },
                 onOpenSession = { id -> navController.navigate(TrainingRoutes.session(id)) },
@@ -38,16 +34,6 @@ fun TrainingScreen(modifier: Modifier = Modifier) {
                 },
             )
         }
-        composable(TrainingRoutes.Exercises) {
-            ExercisesScreen(onBack = { navController.popBackStack() })
-        }
-        composable(TrainingRoutes.Workouts) {
-            WorkoutsScreen(
-                onBack = { navController.popBackStack() },
-                onOpenWorkout = { id -> navController.navigate(TrainingRoutes.workoutDetail(id)) },
-                onOpenSession = { id -> navController.navigate(TrainingRoutes.session(id)) },
-            )
-        }
         composable(
             route = TrainingRoutes.WorkoutDetail,
             arguments = listOf(navArgument("workoutId") { type = NavType.LongType }),
@@ -57,12 +43,6 @@ fun TrainingScreen(modifier: Modifier = Modifier) {
                 workoutId = workoutId,
                 onBack = { navController.popBackStack() },
                 onOpenSession = { id -> navController.navigate(TrainingRoutes.session(id)) },
-            )
-        }
-        composable(TrainingRoutes.Plans) {
-            PlansScreen(
-                onBack = { navController.popBackStack() },
-                onOpenPlan = { id -> navController.navigate(TrainingRoutes.planDetail(id)) },
             )
         }
         composable(
@@ -84,12 +64,6 @@ fun TrainingScreen(modifier: Modifier = Modifier) {
             SessionScreen(
                 sessionId = sessionId,
                 onBack = { navController.popBackStack() },
-            )
-        }
-        composable(TrainingRoutes.History) {
-            HistoryScreen(
-                onBack = { navController.popBackStack() },
-                onOpenSession = { id -> navController.navigate(TrainingRoutes.session(id)) },
             )
         }
     }

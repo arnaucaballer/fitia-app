@@ -4,15 +4,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,12 +36,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arnaucaballer.fitia.R
+import com.arnaucaballer.fitia.design.FitiaPrimaryButton
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import com.arnaucaballer.fitia.feature.training.domain.SessionExercise
@@ -58,6 +65,7 @@ fun SessionScreen(
                 sessionId = sessionId,
                 getSessionUseCase = c.getSessionUseCase,
                 logSessionSetUseCase = c.logSessionSetUseCase,
+                deleteSessionSetUseCase = c.deleteSessionSetUseCase,
                 finishSessionUseCase = c.finishSessionUseCase,
             )
         },
@@ -70,6 +78,7 @@ fun SessionScreen(
 
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = { Text(session?.name ?: stringResource(R.string.training_session_title)) },
@@ -84,13 +93,31 @@ fun SessionScreen(
             )
         },
     ) { padding ->
+        val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+        val listBottom = with(LocalDensity.current) {
+            if (imeBottom > 0) 80.dp else 24.dp
+        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(24.dp),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = 8.dp,
+                bottom = listBottom,
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            if (session?.status == SessionStatus.InProgress) {
+                item(key = "autosave-hint") {
+                    Text(
+                        text = stringResource(R.string.training_sets_autosave_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             items(session?.exercises.orEmpty(), key = { it.id }) { exercise ->
                 SessionExerciseBlock(
                     exercise = exercise,
@@ -105,17 +132,17 @@ fun SessionScreen(
                             isCompleted = completed,
                         )
                     },
+                    onAddSet = { viewModel.addSet(exercise.id) },
+                    onRemoveSet = { setId -> viewModel.removeSet(setId) },
                 )
             }
 
             if (session?.status == SessionStatus.InProgress) {
                 item {
-                    Button(
+                    FitiaPrimaryButton(
+                        text = stringResource(R.string.training_finish_session),
                         onClick = viewModel::finish,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.training_finish_session))
-                    }
+                    )
                 }
             }
         }
@@ -133,9 +160,19 @@ private fun SessionExerciseBlock(
         reps: Int?,
         isCompleted: Boolean,
     ) -> Unit,
+    onAddSet: () -> Unit,
+    onRemoveSet: (setId: Long) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(exercise.name, style = MaterialTheme.typography.titleMedium)
+        if (exercise.sets.isEmpty() && editable) {
+            Text(
+                text = stringResource(R.string.training_no_sets),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
         exercise.sets.forEach { set ->
             var weightText by rememberSaveable(set.id) {
                 mutableStateOf(set.weightKg?.toString().orEmpty())
@@ -147,64 +184,96 @@ private fun SessionExerciseBlock(
                 mutableStateOf(set.isCompleted)
             }
 
-            Row(
+            val save = {
+                onSaveSet(
+                    set.id,
+                    set.setIndex,
+                    weightText.replace(',', '.').toDoubleOrNull(),
+                    repsText.toIntOrNull(),
+                    completed,
+                )
+            }
+
+            SetAutosaveEffect(
+                setKey = set.id,
+                weightText = weightText,
+                repsText = repsText,
+                onSave = { weight, reps ->
+                    onSaveSet(set.id, set.setIndex, weight, reps, completed)
+                },
+            )
+
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.training_set_label, set.setIndex + 1),
-                    modifier = Modifier.weight(0.2f),
-                )
-                OutlinedTextField(
-                    value = weightText,
-                    onValueChange = { weightText = it },
-                    enabled = editable,
-                    label = { Text(stringResource(R.string.field_weight_kg)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.weight(0.3f),
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = repsText,
-                    onValueChange = { repsText = it },
-                    enabled = editable,
-                    label = { Text(stringResource(R.string.field_reps)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(0.3f),
-                    singleLine = true,
-                )
-                Checkbox(
-                    checked = completed,
-                    enabled = editable,
-                    onCheckedChange = { checked ->
-                        completed = checked
-                        onSaveSet(
-                            set.id,
-                            set.setIndex,
-                            weightText.replace(',', '.').toDoubleOrNull(),
-                            repsText.toIntOrNull(),
-                            checked,
-                        )
-                    },
-                )
-            }
-            if (editable) {
-                TextButton(
-                    onClick = {
-                        onSaveSet(
-                            set.id,
-                            set.setIndex,
-                            weightText.replace(',', '.').toDoubleOrNull(),
-                            repsText.toIntOrNull(),
-                            completed,
-                        )
-                    },
-                ) {
-                    Text(stringResource(R.string.action_save))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.training_set_label, set.setIndex + 1),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Checkbox(
+                        checked = completed,
+                        enabled = editable,
+                        onCheckedChange = { checked ->
+                            completed = checked
+                            onSaveSet(
+                                set.id,
+                                set.setIndex,
+                                weightText.replace(',', '.').toDoubleOrNull(),
+                                repsText.toIntOrNull(),
+                                checked,
+                            )
+                        },
+                    )
+                    if (editable) {
+                        IconButton(onClick = { onRemoveSet(set.id) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = stringResource(R.string.training_remove_set),
+                            )
+                        }
+                    }
                 }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = weightText,
+                        onValueChange = { weightText = it },
+                        enabled = editable,
+                        label = { Text(stringResource(R.string.field_weight_kg)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next,
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minWidth = 0.dp),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = repsText,
+                        onValueChange = { repsText = it },
+                        enabled = editable,
+                        label = { Text(stringResource(R.string.field_reps)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { save() }),
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minWidth = 0.dp),
+                        singleLine = true,
+                    )
+                }
+            }
+        }
+        if (editable) {
+            TextButton(onClick = onAddSet) {
+                Text(stringResource(R.string.training_add_set))
             }
         }
     }

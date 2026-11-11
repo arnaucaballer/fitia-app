@@ -3,7 +3,7 @@ package com.arnaucaballer.fitia.feature.training.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnaucaballer.fitia.feature.training.domain.DeleteWorkoutUseCase
-import com.arnaucaballer.fitia.feature.training.domain.ObserveGenericWorkoutsUseCase
+import com.arnaucaballer.fitia.feature.training.domain.ObserveWorkoutsUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SaveWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.StartSessionFromWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.Workout
@@ -16,13 +16,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class WorkoutsViewModel(
-    observeGenericWorkoutsUseCase: ObserveGenericWorkoutsUseCase,
+    observeWorkoutsUseCase: ObserveWorkoutsUseCase,
     private val saveWorkoutUseCase: SaveWorkoutUseCase,
     private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
     private val startSessionFromWorkoutUseCase: StartSessionFromWorkoutUseCase,
 ) : ViewModel() {
 
-    val workouts: StateFlow<List<Workout>> = observeGenericWorkoutsUseCase().stateIn(
+    val workouts: StateFlow<List<Workout>> = observeWorkoutsUseCase().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList(),
@@ -31,10 +31,14 @@ class WorkoutsViewModel(
     private val _sessionStarted = MutableSharedFlow<Long>()
     val sessionStarted: SharedFlow<Long> = _sessionStarted.asSharedFlow()
 
+    private val _created = MutableSharedFlow<Long>()
+    val created: SharedFlow<Long> = _created.asSharedFlow()
+
     fun createWorkout(name: String) {
         if (name.isBlank()) return
         viewModelScope.launch {
-            saveWorkoutUseCase(Workout(name = name.trim()))
+            val id = saveWorkoutUseCase(Workout(name = name.trim()))
+            _created.emit(id)
         }
     }
 

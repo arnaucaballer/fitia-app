@@ -2,14 +2,24 @@ package com.arnaucaballer.fitia.feature.training.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arnaucaballer.fitia.feature.training.domain.DeleteWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
 import com.arnaucaballer.fitia.feature.training.domain.GetWorkoutUseCase
+import com.arnaucaballer.fitia.feature.training.domain.GetLatestSessionForWorkoutUseCase
+import com.arnaucaballer.fitia.feature.training.domain.Muscle
 import com.arnaucaballer.fitia.feature.training.domain.ObserveExercisesUseCase
+import com.arnaucaballer.fitia.feature.training.domain.ObserveMusclesUseCase
+import com.arnaucaballer.fitia.feature.training.domain.ObserveSessionsUseCase
+import com.arnaucaballer.fitia.feature.training.domain.SaveExerciseUseCase
+import com.arnaucaballer.fitia.feature.training.domain.SaveMuscleUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SaveWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SetTarget
+import com.arnaucaballer.fitia.feature.training.domain.SessionStatus
 import com.arnaucaballer.fitia.feature.training.domain.StartSessionFromWorkoutUseCase
+import com.arnaucaballer.fitia.feature.training.domain.TrainingSession
 import com.arnaucaballer.fitia.feature.training.domain.Workout
 import com.arnaucaballer.fitia.feature.training.domain.WorkoutExercise
+import com.arnaucaballer.fitia.feature.training.domain.mergedWithHistory
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -17,21 +27,49 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class WorkoutDetailViewModel(
     private val workoutId: Long,
     private val getWorkoutUseCase: GetWorkoutUseCase,
+    private val getLatestSessionForWorkoutUseCase: GetLatestSessionForWorkoutUseCase,
     observeExercisesUseCase: ObserveExercisesUseCase,
+    observeSessionsUseCase: ObserveSessionsUseCase,
+    observeMusclesUseCase: ObserveMusclesUseCase,
+    private val saveExerciseUseCase: SaveExerciseUseCase,
+    private val saveMuscleUseCase: SaveMuscleUseCase,
     private val saveWorkoutUseCase: SaveWorkoutUseCase,
+    private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
     private val startSessionFromWorkoutUseCase: StartSessionFromWorkoutUseCase,
 ) : ViewModel() {
 
     private val _workout = MutableStateFlow<Workout?>(null)
     val workout: StateFlow<Workout?> = _workout.asStateFlow()
 
+    private val _lastSessionAtEpochMs = MutableStateFlow<Long?>(null)
+    val lastSessionAtEpochMs: StateFlow<Long?> = _lastSessionAtEpochMs.asStateFlow()
+
+    val previousSessions: StateFlow<List<TrainingSession>> = observeSessionsUseCase()
+        .map { sessions ->
+            sessions
+                .filter { it.workoutId == workoutId && it.status == SessionStatus.Completed }
+                .take(5)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
+
     val exercises: StateFlow<List<Exercise>> = observeExercisesUseCase().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList(),
+    )
+
+    val muscles: StateFlow<List<Muscle>> = observeMusclesUseCase().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList(),
@@ -40,13 +78,25 @@ class WorkoutDetailViewModel(
     private val _sessionStarted = MutableSharedFlow<Long>()
     val sessionStarted: SharedFlow<Long> = _sessionStarted.asSharedFlow()
 
+    private val _deleted = MutableSharedFlow<Unit>()
+    val deleted: SharedFlow<Unit> = _deleted.asSharedFlow()
+
     init {
         refresh()
     }
 
     fun refresh() {
         viewModelScope.launch {
-            _workout.value = getWorkoutUseCase(workoutId)
+            val stored = getWorkoutUseCase(workoutId)
+            val history = getLatestSessionForWorkoutUseCase(workoutId)
+            _lastSessionAtEpochMs.value = history?.startedAtEpochMs
+            // Only the first load borrows the last session's numbers; later refreshes
+            // reflect what is stored, so edits are not overwritten by old values.
+            _workout.value = if (_workout.value == null) {
+                stored?.mergedWithHistory(history)
+            } else {
+                stored
+            }
         }
     }
 
@@ -57,10 +107,33 @@ class WorkoutDetailViewModel(
                 exerciseId = exercise.id,
                 exerciseName = exercise.name,
                 sortOrder = current.exercises.size,
-                setTargets = listOf(SetTarget(setIndex = 0, targetReps = 10)),
+                setTargets = listOf(SetTarget(setIndex = 0)),
             ),
         )
         persist(next)
+    }
+
+    fun addNewExercise(name: String, muscleId: Long?) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty() || muscleId == null) return
+        viewModelScope.launch {
+            val existing = exercises.value.firstOrNull { it.name.equals(trimmed, ignoreCase = true) }
+            if (existing != null) {
+                addExercise(existing)
+                return@launch
+            }
+            val id = saveExerciseUseCase(
+                Exercise(name = trimmed, muscleId = muscleId),
+            )
+            addExercise(Exercise(id = id, name = trimmed, muscleId = muscleId))
+        }
+    }
+
+    fun createMuscle(name: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            saveMuscleUseCase(Muscle(name = name.trim()))
+        }
     }
 
     fun addSet(sortOrder: Int) {
@@ -72,8 +145,25 @@ class WorkoutDetailViewModel(
                 item.copy(
                     setTargets = item.setTargets + SetTarget(
                         setIndex = item.setTargets.size,
-                        targetReps = 10,
+                        targetReps = null,
+                        targetWeightKg = null,
                     ),
+                )
+            }
+        }
+        persist(current.copy(exercises = exercises))
+    }
+
+    fun removeSet(sortOrder: Int, setIndex: Int) {
+        val current = _workout.value ?: return
+        val exercises = current.exercises.map { item ->
+            if (item.sortOrder != sortOrder) {
+                item
+            } else {
+                item.copy(
+                    setTargets = item.setTargets
+                        .filterNot { it.setIndex == setIndex }
+                        .mapIndexed { index, target -> target.copy(setIndex = index) },
                 )
             }
         }
@@ -117,6 +207,13 @@ class WorkoutDetailViewModel(
         viewModelScope.launch {
             val sessionId = startSessionFromWorkoutUseCase(workoutId)
             _sessionStarted.emit(sessionId)
+        }
+    }
+
+    fun deleteWorkout() {
+        viewModelScope.launch {
+            deleteWorkoutUseCase(workoutId)
+            _deleted.emit(Unit)
         }
     }
 

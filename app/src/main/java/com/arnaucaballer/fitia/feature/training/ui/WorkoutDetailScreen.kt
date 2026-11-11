@@ -1,20 +1,33 @@
 package com.arnaucaballer.fitia.feature.training.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,16 +45,28 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.arnaucaballer.fitia.R
+import com.arnaucaballer.fitia.design.FitiaCard
+import com.arnaucaballer.fitia.design.FitiaCardShape
+import com.arnaucaballer.fitia.design.FitiaDeleteDialog
+import com.arnaucaballer.fitia.design.FitiaPrimaryButton
+import com.arnaucaballer.fitia.feature.training.domain.SetTarget
+import kotlin.math.roundToInt
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import com.arnaucaballer.fitia.feature.training.domain.WorkoutExercise
+import java.text.DateFormat
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,22 +83,38 @@ fun WorkoutDetailScreen(
             WorkoutDetailViewModel(
                 workoutId = workoutId,
                 getWorkoutUseCase = c.getWorkoutUseCase,
+                getLatestSessionForWorkoutUseCase = c.getLatestSessionForWorkoutUseCase,
                 observeExercisesUseCase = c.observeExercisesUseCase,
+                observeSessionsUseCase = c.observeSessionsUseCase,
+                observeMusclesUseCase = c.observeMusclesUseCase,
+                saveExerciseUseCase = c.saveExerciseUseCase,
+                saveMuscleUseCase = c.saveMuscleUseCase,
                 saveWorkoutUseCase = c.saveWorkoutUseCase,
+                deleteWorkoutUseCase = c.deleteWorkoutUseCase,
                 startSessionFromWorkoutUseCase = c.startSessionFromWorkoutUseCase,
             )
         },
     )
     val workout by viewModel.workout.collectAsStateWithLifecycle()
+    val lastSessionAtEpochMs by viewModel.lastSessionAtEpochMs.collectAsStateWithLifecycle()
+    val previousSessions by viewModel.previousSessions.collectAsStateWithLifecycle()
     val library by viewModel.exercises.collectAsStateWithLifecycle()
+    val muscles by viewModel.muscles.collectAsStateWithLifecycle()
     var showPicker by rememberSaveable { mutableStateOf(false) }
+    var showCreateExercise by rememberSaveable { mutableStateOf(false) }
+    var newExerciseName by rememberSaveable { mutableStateOf("") }
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.sessionStarted.collect(onOpenSession)
     }
+    LaunchedEffect(Unit) {
+        viewModel.deleted.collect { onBack() }
+    }
 
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = { Text(workout?.name ?: stringResource(R.string.training_workout_detail)) },
@@ -86,6 +127,12 @@ fun WorkoutDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showDeleteConfirm = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = stringResource(R.string.training_delete_workout),
+                        )
+                    }
                     IconButton(onClick = viewModel::startSession) {
                         Icon(
                             imageVector = Icons.Outlined.PlayArrow,
@@ -96,17 +143,61 @@ fun WorkoutDetailScreen(
             )
         },
     ) { padding ->
+        val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+        val listBottom = with(LocalDensity.current) {
+            if (imeBottom > 0) 80.dp else 24.dp
+        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(24.dp),
+            contentPadding = PaddingValues(
+                start = 24.dp,
+                end = 24.dp,
+                top = 8.dp,
+                bottom = listBottom,
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                Button(onClick = { showPicker = true }) {
-                    Text(stringResource(R.string.training_add_exercise))
+                val current = workout
+                if (current != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = if (current.isGeneric) {
+                                stringResource(R.string.training_workout_type_generic)
+                            } else {
+                                stringResource(R.string.training_workout_type_plan_only)
+                            },
+                            color = if (current.isGeneric) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                        val last = lastSessionAtEpochMs
+                        if (last != null) {
+                            Text(
+                                text = stringResource(
+                                    R.string.training_last_session_values,
+                                    DateFormat.getDateTimeInstance(
+                                        DateFormat.MEDIUM,
+                                        DateFormat.SHORT,
+                                    ).format(Date(last)),
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
                 }
+            }
+            item {
+                FitiaPrimaryButton(
+                    text = stringResource(R.string.training_add_exercise),
+                    onClick = { showPicker = true },
+                )
             }
 
             val exercises = workout?.exercises.orEmpty()
@@ -123,11 +214,35 @@ fun WorkoutDetailScreen(
                 WorkoutExerciseEditor(
                     exercise = exercise,
                     onAddSet = { viewModel.addSet(exercise.sortOrder) },
+                    onRemoveSet = { setIndex -> viewModel.removeSet(exercise.sortOrder, setIndex) },
                     onRemove = { viewModel.removeExercise(exercise.sortOrder) },
                     onUpdateSet = { setIndex, weight, reps ->
                         viewModel.updateSet(exercise.sortOrder, setIndex, weight, reps)
                     },
                 )
+            }
+
+            if (previousSessions.isNotEmpty()) {
+                item(key = "previous-header") {
+                    Text(
+                        text = stringResource(R.string.training_previous_sessions),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                items(previousSessions, key = { "prev-${it.id}" }) { session ->
+                    FitiaCard(onClick = { onOpenSession(session.id) }) {
+                        Text(session.name, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = DateFormat.getDateTimeInstance(
+                                DateFormat.MEDIUM,
+                                DateFormat.SHORT,
+                            ).format(Date(session.startedAtEpochMs)),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
             }
         }
     }
@@ -140,6 +255,41 @@ fun WorkoutDetailScreen(
                 viewModel.addExercise(exercise)
                 showPicker = false
             },
+            onCreateNew = { prefillName ->
+                newExerciseName = prefillName
+                showPicker = false
+                showCreateExercise = true
+            },
+        )
+    }
+
+    if (showCreateExercise) {
+        ExerciseFormDialog(
+            title = stringResource(R.string.training_create_exercise),
+            muscles = muscles,
+            initialName = newExerciseName,
+            onDismiss = {
+                showCreateExercise = false
+                newExerciseName = ""
+            },
+            onConfirm = { name, muscleId ->
+                viewModel.addNewExercise(name, muscleId)
+                showCreateExercise = false
+                newExerciseName = ""
+            },
+            onEnsureMuscle = viewModel::createMuscle,
+        )
+    }
+
+    if (showDeleteConfirm) {
+        FitiaDeleteDialog(
+            title = stringResource(R.string.training_delete_workout),
+            message = stringResource(R.string.training_delete_workout_confirm),
+            onDismiss = { showDeleteConfirm = false },
+            onConfirm = {
+                showDeleteConfirm = false
+                viewModel.deleteWorkout()
+            },
         )
     }
 }
@@ -148,16 +298,52 @@ fun WorkoutDetailScreen(
 private fun WorkoutExerciseEditor(
     exercise: WorkoutExercise,
     onAddSet: () -> Unit,
+    onRemoveSet: (setIndex: Int) -> Unit,
     onRemove: () -> Unit,
     onUpdateSet: (setIndex: Int, weightKg: Double?, reps: Int?) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = exercise.exerciseName,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
+    var expanded by rememberSaveable(exercise.id, exercise.sortOrder) { mutableStateOf(false) }
+    val motion = spring<IntSize>(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMedium,
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(FitiaCardShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .clickable { expanded = !expanded }
+                .padding(start = 8.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                contentDescription = stringResource(
+                    if (expanded) R.string.training_collapse_sets else R.string.training_expand_sets,
+                ),
+                modifier = Modifier.padding(8.dp),
             )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 12.dp),
+            ) {
+                Text(
+                    text = exercise.exerciseName,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = setSummary(exercise.setTargets),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             IconButton(onClick = onRemove) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
@@ -165,20 +351,64 @@ private fun WorkoutExerciseEditor(
                 )
             }
         }
-        exercise.setTargets.forEach { target ->
-            SetTargetRow(
-                setNumber = target.setIndex + 1,
-                weightKg = target.targetWeightKg,
-                reps = target.targetReps,
-                onCommit = { weight, reps ->
-                    onUpdateSet(target.setIndex, weight, reps)
-                },
-            )
-        }
-        TextButton(onClick = onAddSet) {
-            Text(stringResource(R.string.training_add_set))
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(animationSpec = motion),
+            exit = shrinkVertically(animationSpec = motion),
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 16.dp),
+            ) {
+                if (exercise.setTargets.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.training_no_sets),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                exercise.setTargets.forEach { target ->
+                    SetTargetRow(
+                        setNumber = target.setIndex + 1,
+                        weightKg = target.targetWeightKg,
+                        reps = target.targetReps,
+                        onCommit = { weight, reps ->
+                            onUpdateSet(target.setIndex, weight, reps)
+                        },
+                        onRemove = { onRemoveSet(target.setIndex) },
+                    )
+                }
+                TextButton(onClick = onAddSet) {
+                    Text(stringResource(R.string.training_add_set))
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun setSummary(targets: List<SetTarget>): String {
+    if (targets.isEmpty()) return stringResource(R.string.training_no_sets_short)
+    val countLabel = if (targets.size == 1) {
+        stringResource(R.string.training_sets_summary_one)
+    } else {
+        stringResource(R.string.training_sets_summary_many, targets.size)
+    }
+    val first = targets.first()
+    val weight = first.targetWeightKg
+    val reps = first.targetReps
+    val uniform = targets.all {
+        it.targetWeightKg == weight && it.targetReps == reps
+    }
+    return if (uniform && weight != null && reps != null) {
+        stringResource(R.string.training_sets_summary_detail, countLabel, formatKg(weight), reps)
+    } else {
+        countLabel
+    }
+}
+
+private fun formatKg(value: Double): String {
+    val rounded = (value * 10.0).roundToInt() / 10.0
+    return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
 }
 
 @Composable
@@ -187,6 +417,7 @@ private fun SetTargetRow(
     weightKg: Double?,
     reps: Int?,
     onCommit: (weightKg: Double?, reps: Int?) -> Unit,
+    onRemove: () -> Unit,
 ) {
     var weightText by rememberSaveable(setNumber) {
         mutableStateOf(weightKg?.toString().orEmpty())
@@ -195,40 +426,67 @@ private fun SetTargetRow(
         mutableStateOf(reps?.toString().orEmpty())
     }
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top = 8.dp),
+    val save = {
+        onCommit(
+            weightText.replace(',', '.').toDoubleOrNull(),
+            repsText.toIntOrNull(),
+        )
+    }
+
+    SetAutosaveEffect(
+        setKey = setNumber,
+        weightText = weightText,
+        repsText = repsText,
+        onSave = { weight, reps -> onCommit(weight, reps) },
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            text = stringResource(R.string.training_set_label, setNumber),
-            modifier = Modifier.weight(0.25f),
-        )
-        OutlinedTextField(
-            value = weightText,
-            onValueChange = { weightText = it },
-            label = { Text(stringResource(R.string.field_weight_kg)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.weight(0.35f),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = repsText,
-            onValueChange = { repsText = it },
-            label = { Text(stringResource(R.string.field_reps)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.weight(0.35f),
-            singleLine = true,
-        )
-        TextButton(
-            onClick = {
-                onCommit(
-                    weightText.replace(',', '.').toDoubleOrNull(),
-                    repsText.toIntOrNull(),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.training_set_label, setNumber),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onRemove) {
+                Icon(
+                    imageVector = Icons.Outlined.Delete,
+                    contentDescription = stringResource(R.string.training_remove_set),
                 )
-            },
-        ) {
-            Text(stringResource(R.string.action_save))
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = weightText,
+                onValueChange = { weightText = it },
+                label = { Text(stringResource(R.string.field_weight_kg)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minWidth = 0.dp),
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = repsText,
+                onValueChange = { repsText = it },
+                label = { Text(stringResource(R.string.field_reps)) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { save() }),
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minWidth = 0.dp),
+                singleLine = true,
+            )
         }
     }
 }

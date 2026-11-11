@@ -2,6 +2,7 @@ package com.arnaucaballer.fitia.feature.training.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.arnaucaballer.fitia.feature.training.domain.DeleteSessionSetUseCase
 import com.arnaucaballer.fitia.feature.training.domain.FinishSessionUseCase
 import com.arnaucaballer.fitia.feature.training.domain.GetSessionUseCase
 import com.arnaucaballer.fitia.feature.training.domain.LogSessionSetUseCase
@@ -18,6 +19,7 @@ class SessionViewModel(
     private val sessionId: Long,
     private val getSessionUseCase: GetSessionUseCase,
     private val logSessionSetUseCase: LogSessionSetUseCase,
+    private val deleteSessionSetUseCase: DeleteSessionSetUseCase,
     private val finishSessionUseCase: FinishSessionUseCase,
 ) : ViewModel() {
 
@@ -54,6 +56,28 @@ class SessionViewModel(
                 reps = reps,
                 isCompleted = isCompleted,
             )
+            refresh()
+        }
+    }
+
+    fun addSet(sessionExerciseId: Long) {
+        val exercise = _session.value?.exercises?.firstOrNull { it.id == sessionExerciseId } ?: return
+        viewModelScope.launch {
+            logSessionSetUseCase(
+                sessionExerciseId = sessionExerciseId,
+                setId = null,
+                setIndex = exercise.sets.size,
+                weightKg = null,
+                reps = null,
+                isCompleted = false,
+            )
+            refresh()
+        }
+    }
+
+    fun removeSet(setId: Long) {
+        viewModelScope.launch {
+            deleteSessionSetUseCase(setId)
             refresh()
         }
     }

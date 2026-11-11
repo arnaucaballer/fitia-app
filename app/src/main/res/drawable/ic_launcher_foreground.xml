@@ -4,12 +4,11 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Bold F mark in Fitia orange, safe zone centered -->
+    <!-- F mark centered in the 66dp adaptive-icon safe zone -->
     <path
         android:fillColor="#FF6A00"
-        android:pathData="M36,30h40v10H48v10h24v10H48v18H36V30z" />
-    <!-- White accent bar -->
+        android:pathData="M39,33h34v9H51v9h20v9H51v15H39V33z" />
     <path
         android:fillColor="#F7F7F7"
-        android:pathData="M48,40h22v4H48z" />
+        android:pathData="M51,42h18v3.5H51z" />
 </vector>
