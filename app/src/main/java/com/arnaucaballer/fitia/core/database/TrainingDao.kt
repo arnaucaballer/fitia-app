@@ -29,6 +29,18 @@ interface TrainingDao {
     @Query("SELECT * FROM exercises WHERE id = :id")
     suspend fun getExercise(id: Long): ExerciseEntity?
 
+    @Query("SELECT * FROM exercise_muscles ORDER BY exerciseId ASC, sortOrder ASC")
+    fun observeExerciseMuscles(): Flow<List<ExerciseMuscleEntity>>
+
+    @Query("SELECT * FROM exercise_muscles WHERE exerciseId = :exerciseId ORDER BY sortOrder ASC")
+    suspend fun getExerciseMuscles(exerciseId: Long): List<ExerciseMuscleEntity>
+
+    @Query("DELETE FROM exercise_muscles WHERE exerciseId = :exerciseId")
+    suspend fun clearExerciseMuscles(exerciseId: Long)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertExerciseMuscles(entities: List<ExerciseMuscleEntity>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertExercise(entity: ExerciseEntity): Long
 

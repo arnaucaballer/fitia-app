@@ -67,6 +67,7 @@ class AppContainer(
         FitiaMigrations.MIGRATION_4_5,
         FitiaMigrations.MIGRATION_5_6,
         FitiaMigrations.MIGRATION_6_7,
+        FitiaMigrations.MIGRATION_7_8,
     ).setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
         .build()
 

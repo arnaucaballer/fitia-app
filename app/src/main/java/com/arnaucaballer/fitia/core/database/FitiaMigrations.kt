@@ -4,6 +4,34 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 object FitiaMigrations {
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `exercise_muscles` (
+                    `exerciseId` INTEGER NOT NULL,
+                    `muscleId` INTEGER NOT NULL,
+                    `sortOrder` INTEGER NOT NULL,
+                    PRIMARY KEY(`exerciseId`, `muscleId`),
+                    FOREIGN KEY(`exerciseId`) REFERENCES `exercises`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE,
+                    FOREIGN KEY(`muscleId`) REFERENCES `muscles`(`id`)
+                        ON UPDATE NO ACTION ON DELETE CASCADE
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_exercise_muscles_muscleId` ON `exercise_muscles` (`muscleId`)",
+            )
+            db.execSQL(
+                """
+                INSERT OR IGNORE INTO `exercise_muscles` (`exerciseId`, `muscleId`, `sortOrder`)
+                SELECT `id`, `muscleId`, 0 FROM `exercises` WHERE `muscleId` IS NOT NULL
+                """.trimIndent(),
+            )
+        }
+    }
+
     val MIGRATION_6_7 = object : Migration(6, 7) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(

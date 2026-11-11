@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
     entities = [
         MuscleEntity::class,
         ExerciseEntity::class,
+        ExerciseMuscleEntity::class,
         WorkoutEntity::class,
         WorkoutExerciseEntity::class,
         WorkoutSetTargetEntity::class,
@@ -27,7 +28,7 @@ import androidx.room.RoomDatabase
         TrainingPreferencesEntity::class,
         PlanWeeklyScheduleEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class FitiaDatabase : RoomDatabase() {

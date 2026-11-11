@@ -1,5 +1,6 @@
 package com.arnaucaballer.fitia.feature.training.data
 
+import com.arnaucaballer.fitia.core.database.ExerciseMuscleEntity
 import com.arnaucaballer.fitia.core.database.PlanWorkoutEntity
 import com.arnaucaballer.fitia.core.database.SessionEntity
 import com.arnaucaballer.fitia.core.database.SessionExerciseEntity
@@ -9,6 +10,7 @@ import com.arnaucaballer.fitia.core.database.TrainingDao
 import com.arnaucaballer.fitia.core.database.WorkoutExerciseEntity
 import com.arnaucaballer.fitia.core.database.MuscleEntity
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.ExerciseMuscle
 import com.arnaucaballer.fitia.feature.training.domain.Muscle
 import com.arnaucaballer.fitia.feature.training.domain.SessionStatus
 import com.arnaucaballer.fitia.feature.training.domain.TrainingPlan
@@ -60,11 +62,21 @@ class RoomTrainingRepository(
     }
 
     override fun observeExercises(): Flow<List<Exercise>> =
-        combine(dao.observeExercises(), dao.observeMuscles()) { exercises, muscles ->
+        combine(
+            dao.observeExercises(),
+            dao.observeMuscles(),
+            dao.observeExerciseMuscles(),
+        ) { exercises, muscles, links ->
             val muscleNames = muscles.associate { it.id to it.name }
+            val byExercise = links.groupBy { it.exerciseId }
             exercises.map { entity ->
+                val rows = byExercise[entity.id].orEmpty()
+                    .sortedBy { it.sortOrder }
+                    .mapNotNull { link ->
+                        muscleNames[link.muscleId]?.let { ExerciseMuscle(link.muscleId, it) }
+                    }
                 val resolved = entity.muscleId?.let { muscleNames[it] }.orEmpty()
-                entity.toDomain(resolvedMuscleName = resolved)
+                entity.toDomain(resolvedMuscleName = resolved, resolvedMuscles = rows)
             }
         }.distinctUntilChanged()
 
@@ -75,18 +87,37 @@ class RoomTrainingRepository(
     override suspend fun getExercise(id: Long): Exercise? {
         val entity = dao.getExercise(id) ?: return null
         val resolved = entity.muscleId?.let { dao.getMuscle(it)?.name }.orEmpty()
-        return entity.toDomain(resolvedMuscleName = resolved)
+        val rows = dao.getExerciseMuscles(id).mapNotNull { link ->
+            dao.getMuscle(link.muscleId)?.let { ExerciseMuscle(it.id, it.name) }
+        }
+        return entity.toDomain(resolvedMuscleName = resolved, resolvedMuscles = rows)
     }
 
     override suspend fun saveExercise(exercise: Exercise): Long {
         val now = System.currentTimeMillis()
-        val muscleLabel = exercise.muscleId?.let { dao.getMuscle(it)?.name }.orEmpty()
+        val muscleIds = exercise.muscleIds
+        val primaryId = muscleIds.firstOrNull()
+        val muscleLabel = primaryId?.let { dao.getMuscle(it)?.name }.orEmpty()
             .ifBlank { exercise.muscleGroup }
         val entity = exercise.toEntity().copy(
+            muscleId = primaryId,
             muscleGroup = muscleLabel.trim(),
             createdAtEpochMs = if (exercise.id == 0L) now else exercise.createdAtEpochMs,
         )
-        return dao.upsertExercise(entity)
+        val exerciseId = dao.upsertExercise(entity)
+        dao.clearExerciseMuscles(exerciseId)
+        if (muscleIds.isNotEmpty()) {
+            dao.insertExerciseMuscles(
+                muscleIds.mapIndexed { index, muscleId ->
+                    ExerciseMuscleEntity(
+                        exerciseId = exerciseId,
+                        muscleId = muscleId,
+                        sortOrder = index,
+                    )
+                },
+            )
+        }
+        return exerciseId
     }
 
     override suspend fun deleteExercise(id: Long) {

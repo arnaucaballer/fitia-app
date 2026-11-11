@@ -1,5 +1,6 @@
 package com.arnaucaballer.fitia.feature.training.data
 
+import com.arnaucaballer.fitia.core.database.ExerciseMuscleEntity
 import com.arnaucaballer.fitia.core.database.ExerciseEntity
 import com.arnaucaballer.fitia.core.database.MuscleEntity
 import com.arnaucaballer.fitia.core.database.PlanEntity
@@ -11,6 +12,7 @@ import com.arnaucaballer.fitia.core.database.WorkoutEntity
 import com.arnaucaballer.fitia.core.database.WorkoutExerciseEntity
 import com.arnaucaballer.fitia.core.database.WorkoutSetTargetEntity
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.ExerciseMuscle
 import com.arnaucaballer.fitia.feature.training.domain.Muscle
 import com.arnaucaballer.fitia.feature.training.domain.SessionExercise
 import com.arnaucaballer.fitia.feature.training.domain.SessionSet
@@ -33,8 +35,18 @@ internal fun Muscle.toEntity(): MuscleEntity = MuscleEntity(
     createdAtEpochMs = createdAtEpochMs,
 )
 
-internal fun ExerciseEntity.toDomain(resolvedMuscleName: String = ""): Exercise {
+internal fun ExerciseEntity.toDomain(
+    resolvedMuscleName: String = "",
+    resolvedMuscles: List<ExerciseMuscle> = emptyList(),
+): Exercise {
     val label = resolvedMuscleName.ifBlank { muscleGroup }
+    val muscles = resolvedMuscles.ifEmpty {
+        if (muscleId != null && label.isNotBlank()) {
+            listOf(ExerciseMuscle(muscleId, label))
+        } else {
+            emptyList()
+        }
+    }
     return Exercise(
         id = id,
         name = name,
@@ -43,6 +55,7 @@ internal fun ExerciseEntity.toDomain(resolvedMuscleName: String = ""): Exercise 
         muscleGroup = muscleGroup,
         notes = notes,
         createdAtEpochMs = createdAtEpochMs,
+        muscles = muscles,
     )
 }
 
