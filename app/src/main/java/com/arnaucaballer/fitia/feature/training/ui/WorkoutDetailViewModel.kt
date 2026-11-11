@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnaucaballer.fitia.feature.training.domain.DeleteWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.ExerciseMuscle
 import com.arnaucaballer.fitia.feature.training.domain.GetWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.GetLatestSessionForWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.Muscle
@@ -113,19 +114,33 @@ class WorkoutDetailViewModel(
         persist(next)
     }
 
-    fun addNewExercise(name: String, muscleId: Long?) {
+    fun addNewExercise(name: String, muscleIds: List<Long>) {
         val trimmed = name.trim()
-        if (trimmed.isEmpty() || muscleId == null) return
+        if (trimmed.isEmpty() || muscleIds.isEmpty()) return
         viewModelScope.launch {
             val existing = exercises.value.firstOrNull { it.name.equals(trimmed, ignoreCase = true) }
             if (existing != null) {
                 addExercise(existing)
                 return@launch
             }
+            val resolved = muscleIds.distinct().mapNotNull { id ->
+                muscles.value.firstOrNull { it.id == id }?.let { ExerciseMuscle(it.id, it.name) }
+            }
             val id = saveExerciseUseCase(
-                Exercise(name = trimmed, muscleId = muscleId),
+                Exercise(
+                    name = trimmed,
+                    muscleId = muscleIds.first(),
+                    muscles = resolved,
+                ),
             )
-            addExercise(Exercise(id = id, name = trimmed, muscleId = muscleId))
+            addExercise(
+                Exercise(
+                    id = id,
+                    name = trimmed,
+                    muscleId = muscleIds.first(),
+                    muscles = resolved,
+                ),
+            )
         }
     }
 

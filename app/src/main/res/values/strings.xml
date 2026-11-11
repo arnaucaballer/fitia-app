@@ -103,6 +103,11 @@
     <string name="training_open_history">Historial</string>
     <string name="training_exercises_title">Ejercicios</string>
     <string name="training_muscle_label">Músculo</string>
+    <string name="training_muscles_label">Músculos</string>
+    <string name="training_add_muscle">Añadir músculo</string>
+    <string name="training_remove_muscle">Quitar músculo</string>
+    <string name="training_muscle_primary">Principal</string>
+    <string name="training_muscle_primary_hint">El primero es el principal: ahí se agrupa el ejercicio.</string>
     <string name="training_select_muscle">Toca el cuerpo para elegir</string>
     <string name="training_muscle_map_title">Elegir músculo</string>
     <string name="training_body_front">Frente</string>
@@ -114,6 +119,7 @@
     <string name="training_muscle_other">Otros músculos</string>
     <string name="training_exercises_unassigned">Sin músculo asignado</string>
     <string name="training_muscle_exercise_count">%1$d ejercicios</string>
+    <string name="training_exercise_other_muscles">También %1$s</string>
     <string name="training_edit_exercise">Editar ejercicio</string>
     <string name="training_exercises_by_muscle_hint">Los ejercicios se agrupan por músculo. Sé específico al nombrar cada músculo.</string>
     <string name="training_workouts_title">Entrenamientos</string>

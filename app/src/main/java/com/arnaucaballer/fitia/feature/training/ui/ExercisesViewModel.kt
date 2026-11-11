@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arnaucaballer.fitia.feature.training.domain.DeleteExerciseUseCase
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.ExerciseMuscle
 import com.arnaucaballer.fitia.feature.training.domain.Muscle
 import com.arnaucaballer.fitia.feature.training.domain.ObserveExercisesUseCase
 import com.arnaucaballer.fitia.feature.training.domain.ObserveMusclesUseCase
@@ -36,20 +37,24 @@ class ExercisesViewModel(
 
     fun saveExercise(
         name: String,
-        muscleId: Long?,
+        muscleIds: List<Long>,
         exerciseId: Long = 0,
         notes: String = "",
     ) {
-        if (name.isBlank() || muscleId == null) return
+        if (name.isBlank() || muscleIds.isEmpty()) return
         viewModelScope.launch {
             val existing = exercises.value.firstOrNull { it.id == exerciseId }
+            val resolved = muscleIds.distinct().mapNotNull { id ->
+                muscles.value.firstOrNull { it.id == id }?.let { ExerciseMuscle(it.id, it.name) }
+            }
             saveExerciseUseCase(
                 Exercise(
                     id = exerciseId,
                     name = name.trim(),
-                    muscleId = muscleId,
+                    muscleId = muscleIds.first(),
                     notes = existing?.notes ?: notes,
                     createdAtEpochMs = existing?.createdAtEpochMs ?: 0,
+                    muscles = resolved,
                 ),
             )
         }

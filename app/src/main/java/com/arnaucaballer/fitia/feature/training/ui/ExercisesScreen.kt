@@ -80,7 +80,7 @@ fun ExercisesScreen(
     val sections = remember(exercises, unassignedLabel) {
         exercises
             .groupBy { exercise ->
-                exercise.muscleName.ifBlank { unassignedLabel }
+                exercise.primaryMuscleName.ifBlank { unassignedLabel }
             }
             .entries
             .sortedWith(
@@ -174,15 +174,15 @@ fun ExercisesScreen(
             ),
             muscles = muscles,
             initialName = editingExercise?.name.orEmpty(),
-            initialMuscleId = editingExercise?.muscleId,
+            initialMuscleIds = editingExercise?.muscleIds.orEmpty(),
             onDismiss = {
                 showExerciseForm = false
                 editingExercise = null
             },
-            onConfirm = { name, muscleId ->
+            onConfirm = { name, muscleIds ->
                 viewModel.saveExercise(
                     name = name,
-                    muscleId = muscleId,
+                    muscleIds = muscleIds,
                     exerciseId = editingExercise?.id ?: 0,
                 )
                 showExerciseForm = false
@@ -252,11 +252,23 @@ private fun MuscleExerciseSection(
                             .padding(vertical = 10.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = exercise.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.weight(1f),
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = exercise.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            val extras = exercise.extraMuscleNames
+                            if (extras.isNotEmpty()) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.training_exercise_other_muscles,
+                                        extras.joinToString(", "),
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                         IconButton(onClick = { onDelete(exercise.id) }) {
                             Icon(
                                 imageVector = Icons.Outlined.Delete,

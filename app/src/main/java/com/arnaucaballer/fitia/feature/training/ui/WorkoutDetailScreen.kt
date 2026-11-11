@@ -272,8 +272,8 @@ fun WorkoutDetailScreen(
                 showCreateExercise = false
                 newExerciseName = ""
             },
-            onConfirm = { name, muscleId ->
-                viewModel.addNewExercise(name, muscleId)
+            onConfirm = { name, muscleIds ->
+                viewModel.addNewExercise(name, muscleIds)
                 showCreateExercise = false
                 newExerciseName = ""
             },

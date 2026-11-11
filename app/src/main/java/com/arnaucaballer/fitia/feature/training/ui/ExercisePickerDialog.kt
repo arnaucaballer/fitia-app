@@ -51,13 +51,14 @@ fun ExercisePickerDialog(
         } else {
             exercises.filter { exercise ->
                 exercise.name.contains(needle, ignoreCase = true) ||
-                    exercise.muscleName.contains(needle, ignoreCase = true)
+                    exercise.primaryMuscleName.contains(needle, ignoreCase = true) ||
+                    exercise.extraMuscleNames.any { it.contains(needle, ignoreCase = true) }
             }
         }
     }
     val sections = remember(filtered, unassignedLabel) {
         filtered
-            .groupBy { exercise -> exercise.muscleName.ifBlank { unassignedLabel } }
+            .groupBy { exercise -> exercise.primaryMuscleName.ifBlank { unassignedLabel } }
             .entries
             .sortedWith(
                 compareBy<Map.Entry<String, List<Exercise>>> {

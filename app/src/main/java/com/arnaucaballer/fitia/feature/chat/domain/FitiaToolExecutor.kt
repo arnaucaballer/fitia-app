@@ -14,6 +14,7 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.RecalculateTargetsUseCas
 import com.arnaucaballer.fitia.feature.nutrition.domain.SaveManualTargetsUseCase
 import com.arnaucaballer.fitia.feature.nutrition.domain.Sex
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.ExerciseMuscle
 import com.arnaucaballer.fitia.feature.training.domain.SetTarget
 import com.arnaucaballer.fitia.feature.training.domain.TrainingPlan
 import com.arnaucaballer.fitia.feature.training.domain.TrainingRepository
@@ -79,8 +80,8 @@ class FitiaToolExecutor(
         // —— Escritura entrenamiento ——
         tool(
             "create_exercise",
-            "Crea un ejercicio.",
-            """{"type":"object","properties":{"name":{"type":"string"},"muscle_group":{"type":"string"},"notes":{"type":"string"}},"required":["name"]}""",
+            "Crea un ejercicio. Admite varios músculos: el primero es el principal (muscle_group) y el resto van en muscle_groups.",
+            """{"type":"object","properties":{"name":{"type":"string"},"muscle_group":{"type":"string"},"muscle_groups":{"type":"array","items":{"type":"string"}},"notes":{"type":"string"}},"required":["name"]}""",
         ),
         tool(
             "create_workout",
@@ -222,14 +223,25 @@ class FitiaToolExecutor(
                     session?.toDetailJson() ?: """{"active":false}"""
                 }
                 "create_exercise" -> {
-                    val muscleGroup = args.stringOrEmpty("muscle_group")
-                    val muscleId = trainingRepository.findOrCreateMuscleByName(muscleGroup)
+                    val groups = buildList {
+                        args.stringOrEmpty("muscle_group").takeIf { it.isNotBlank() }?.let { add(it) }
+                        (args["muscle_groups"]?.jsonArray)?.forEach { element ->
+                            val name = element.jsonPrimitive.contentOrNull
+                            if (!name.isNullOrBlank()) add(name)
+                        }
+                    }.distinctBy { it.lowercase() }
+                    val muscles = groups.mapNotNull { group ->
+                        trainingRepository.findOrCreateMuscleByName(group)?.let { muscleId ->
+                            ExerciseMuscle(id = muscleId, name = group.trim())
+                        }
+                    }
                     val id = trainingRepository.saveExercise(
                         Exercise(
                             name = args.string("name"),
-                            muscleId = muscleId,
-                            muscleGroup = muscleGroup,
+                            muscleId = muscles.firstOrNull()?.id,
+                            muscleGroup = muscles.firstOrNull()?.name.orEmpty(),
                             notes = args.stringOrEmpty("notes"),
+                            muscles = muscles,
                         ),
                     )
                     """{"id":$id}"""
