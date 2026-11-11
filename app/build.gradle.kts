@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -14,8 +13,8 @@ android {
         applicationId = "com.arnaucaballer.fitia"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 32
+        versionName = "0.1.32"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -34,8 +33,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 
     buildFeatures {
@@ -51,6 +52,16 @@ android {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+tasks.matching { it.name == "assembleDebug" }.configureEach {
+    doLast {
+        val version = android.defaultConfig.versionName ?: "0.0.0"
+        val apk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+        val folder = rootProject.layout.projectDirectory.dir("apk").asFile
+        folder.mkdirs()
+        apk.copyTo(folder.resolve("fitia-$version.apk"), overwrite = true)
+    }
 }
 
 dependencies {

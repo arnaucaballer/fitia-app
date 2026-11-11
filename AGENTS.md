@@ -67,5 +67,6 @@ Reglas:
 
 - `applicationId`: `com.arnaucaballer.fitia`
 - minSdk 26, compileSdk 35, JDK 17.
-- APK de entrega: debug en `app/build/outputs/apk/debug/app-debug.apk`.
+- APK de entrega: `apk/fitia-<versionName>.apk`. `assembleDebug` lo copia ahí. Al cambiar `versionName` el archivo nuevo convive con los anteriores.
+- Cada cambio que afecte a lo instalable termina con versión nueva y APK generado (`JAVA_HOME=/home/arnau/.local/jdk/jdk-17.0.20.1+1 ./gradlew :app:assembleDebug`).
 - No subir APKs ni carpetas `build/` al repo.

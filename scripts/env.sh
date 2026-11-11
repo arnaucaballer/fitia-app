@@ -15,7 +15,7 @@ export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME
 
 export FITIA_AVD="${FITIA_AVD:-Fitia_API34}"
 export FITIA_PACKAGE="${FITIA_PACKAGE:-com.arnaucaballer.fitia}"
-export FITIA_APK="${FITIA_APK:-$ROOT_DIR/app/build/outputs/apk/debug/app-debug.apk}"
+export FITIA_APK_DIR="${FITIA_APK_DIR:-$ROOT_DIR/apk}"
 
 if [[ ! -x "$JAVA_HOME/bin/java" ]]; then
   echo "JDK 17 no encontrado. Instálalo o exporta JAVA_HOME." >&2

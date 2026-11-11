@@ -1,0 +1,15 @@
+---
+description: Tras cambiar la app, subir versión y generar el APK de entrega
+alwaysApply: true
+---
+
+# APK de entrega
+
+Si el cambio afecta a lo que se instala (código, recursos, manifiesto o Gradle), termina generando el APK. No hace falta si solo respondes una pregunta o tocas documentación.
+
+1. Sube `versionCode` en 1 y el parche de `versionName` (`0.1.x`) en `app/build.gradle.kts`.
+2. Actualiza en el README la ruta de ejemplo `apk/fitia-<versionName>.apk`.
+3. Compila con `JAVA_HOME=/home/arnau/.local/jdk/jdk-17.0.20.1+1 ./gradlew :app:assembleDebug`.
+4. Di la ruta `apk/fitia-<versionName>.apk`. El archivo anterior se queda.
+
+No hagas commit ni push salvo que te lo pidan. No subas el APK al repo.

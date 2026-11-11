@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "mobile-design-android": {
+      "source": "ivan-magda/mobile-design-skills",
+      "sourceType": "github",
+      "skillPath": "mobile-design-android/SKILL.md",
+      "computedHash": "ca6cbe1499c6e383ddce6118c257e947be7f7fa1da24349bb632949488f24ab1"
+    }
+  }
+}

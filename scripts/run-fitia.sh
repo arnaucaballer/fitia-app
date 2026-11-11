@@ -17,8 +17,11 @@ fi
 echo "==> Compilando APK debug…"
 ./gradlew :app:assembleDebug --quiet
 
+if [[ -z "${FITIA_APK:-}" || ! -f "$FITIA_APK" ]]; then
+  FITIA_APK="$(ls -1t "$FITIA_APK_DIR"/fitia-*.apk 2>/dev/null | head -1 || true)"
+fi
 if [[ ! -f "$FITIA_APK" ]]; then
-  echo "No está el APK en $FITIA_APK" >&2
+  echo "No está el APK en $FITIA_APK_DIR" >&2
   exit 1
 fi
 
