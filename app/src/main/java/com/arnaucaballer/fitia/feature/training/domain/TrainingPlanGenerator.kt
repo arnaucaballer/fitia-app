@@ -4,7 +4,10 @@ import com.arnaucaballer.fitia.core.ai.ChatCompletionRequest
 import com.arnaucaballer.fitia.core.ai.ChatMessage
 import com.arnaucaballer.fitia.core.ai.OpenAiCompatibleClient
 import com.arnaucaballer.fitia.feature.settings.data.AiSettingsStore
+import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.ExerciseMuscle
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -34,12 +37,17 @@ class TrainingPlanGenerator(
 
         val ownedWorkouts = draft.workouts.map { workout ->
             val exercises = workout.exercises.map { item ->
-                val muscleId = trainingRepository.findOrCreateMuscleByName(item.muscleGroup)
+                val resolved = item.muscleGroups.mapNotNull { group ->
+                    trainingRepository.findOrCreateMuscleByName(group)?.let { muscleId ->
+                        ExerciseMuscle(id = muscleId, name = group.trim())
+                    }
+                }
                 val exerciseId = trainingRepository.saveExercise(
                     Exercise(
                         name = item.exerciseName,
-                        muscleId = muscleId,
-                        muscleGroup = item.muscleGroup,
+                        muscleId = resolved.firstOrNull()?.id,
+                        muscleGroup = resolved.firstOrNull()?.name.orEmpty(),
+                        muscles = resolved,
                     ),
                 )
                 item.copy(exerciseId = exerciseId)
@@ -120,6 +128,9 @@ class TrainingPlanGenerator(
                 val ex = exEl.jsonObject
                 val name = ex["name"]?.jsonPrimitive?.content ?: "Ejercicio"
                 val muscle = ex["muscle_group"]?.jsonPrimitive?.content.orEmpty()
+                val secondary = ex["muscle_groups"]?.jsonArray.orEmpty().mapNotNull {
+                    it.jsonPrimitive.contentOrNull?.trim()
+                }.filterNot { it.equals(muscle.trim(), ignoreCase = true) }
                 val sets = ex["sets"]?.jsonArray.orEmpty().mapIndexed { setIndex, setEl ->
                     val s = setEl.jsonObject
                     SetTarget(
@@ -135,6 +146,7 @@ class TrainingPlanGenerator(
                     exerciseName = name,
                     sortOrder = index,
                     muscleGroup = muscle,
+                    muscleGroups = listOf(muscle).filter { it.isNotBlank() } + secondary,
                     setTargets = sets,
                 )
             }
