@@ -17,6 +17,7 @@ import com.arnaucaballer.fitia.feature.training.domain.Exercise
 import com.arnaucaballer.fitia.feature.training.domain.SetTarget
 import com.arnaucaballer.fitia.feature.training.domain.TrainingPlan
 import com.arnaucaballer.fitia.feature.training.domain.TrainingRepository
+import com.arnaucaballer.fitia.feature.training.domain.TrainingSession
 import com.arnaucaballer.fitia.feature.training.domain.Workout
 import com.arnaucaballer.fitia.feature.training.domain.WorkoutExercise
 import kotlinx.coroutines.flow.first
@@ -41,23 +42,60 @@ class FitiaToolExecutor(
     private val json = Json { ignoreUnknownKeys = true }
 
     val definitions: List<AiToolDefinition> = listOf(
-        tool("list_exercises", "Lista los ejercicios guardados.", """{"type":"object","properties":{}}"""),
+        // —— Lectura entrenamiento ——
+        tool(
+            "get_training_overview",
+            "Vista general de entrenamiento: planes, entrenos genéricos, ejercicios y sesión activa.",
+            """{"type":"object","properties":{}}""",
+        ),
+        tool("list_exercises", "Lista los ejercicios de la biblioteca.", """{"type":"object","properties":{}}"""),
+        tool(
+            "list_workouts",
+            "Lista entrenamientos (genéricos y/o de plan).",
+            """{"type":"object","properties":{"only_generic":{"type":"boolean"}}}""",
+        ),
+        tool(
+            "get_workout",
+            "Detalle de un entrenamiento: ejercicios, series, peso y reps objetivo.",
+            """{"type":"object","properties":{"workout_id":{"type":"integer"}},"required":["workout_id"]}""",
+        ),
+        tool("list_training_plans", "Lista planes de entrenamiento con nº de entrenos.", """{"type":"object","properties":{}}"""),
+        tool(
+            "get_training_plan",
+            "Detalle de un plan con sus entrenamientos y ejercicios.",
+            """{"type":"object","properties":{"plan_id":{"type":"integer"}},"required":["plan_id"]}""",
+        ),
+        tool(
+            "list_sessions",
+            "Lista sesiones recientes (historial).",
+            """{"type":"object","properties":{"limit":{"type":"integer"}}}""",
+        ),
+        tool(
+            "get_session",
+            "Detalle de una sesión: ejercicios y series registradas.",
+            """{"type":"object","properties":{"session_id":{"type":"integer"}},"required":["session_id"]}""",
+        ),
+        tool("get_active_session", "Sesión de entrenamiento en curso, si hay.", """{"type":"object","properties":{}}"""),
+        // —— Escritura entrenamiento ——
         tool(
             "create_exercise",
             "Crea un ejercicio.",
             """{"type":"object","properties":{"name":{"type":"string"},"muscle_group":{"type":"string"},"notes":{"type":"string"}},"required":["name"]}""",
         ),
-        tool("list_workouts", "Lista entrenamientos.", """{"type":"object","properties":{}}"""),
         tool(
             "create_workout",
-            "Crea un entrenamiento con ejercicios y series objetivo.",
-            """{"type":"object","properties":{"name":{"type":"string"},"notes":{"type":"string"},"exercises":{"type":"array","items":{"type":"object","properties":{"exercise_id":{"type":"integer"},"sets":{"type":"array","items":{"type":"object","properties":{"weight_kg":{"type":"number"},"reps":{"type":"integer"}}}}},"required":["exercise_id"]}}},"required":["name"]}""",
+            "Crea un entrenamiento. Sin plan_id = genérico (biblioteca). Con plan_id = solo de ese plan y se enlaza al plan.",
+            """{"type":"object","properties":{"name":{"type":"string"},"notes":{"type":"string"},"plan_id":{"type":"integer"},"exercises":{"type":"array","items":{"type":"object","properties":{"exercise_id":{"type":"integer"},"sets":{"type":"array","items":{"type":"object","properties":{"weight_kg":{"type":"number"},"reps":{"type":"integer"}}}}},"required":["exercise_id"]}}},"required":["name"]}""",
         ),
-        tool("list_training_plans", "Lista planes de entrenamiento.", """{"type":"object","properties":{}}"""),
         tool(
             "create_training_plan",
-            "Crea un plan con IDs de entrenamientos.",
+            "Crea un plan (conjunto de entrenamientos) con IDs existentes: genéricos o del plan.",
             """{"type":"object","properties":{"name":{"type":"string"},"workout_ids":{"type":"array","items":{"type":"integer"}}},"required":["name"]}""",
+        ),
+        tool(
+            "link_workout_to_plan",
+            "Enlaza un entrenamiento existente (normalmente genérico) a un plan sin copiarlo.",
+            """{"type":"object","properties":{"plan_id":{"type":"integer"},"workout_id":{"type":"integer"}},"required":["plan_id","workout_id"]}""",
         ),
         tool(
             "start_session",
@@ -74,7 +112,30 @@ class FitiaToolExecutor(
             "Termina una sesión.",
             """{"type":"object","properties":{"session_id":{"type":"integer"}},"required":["session_id"]}""",
         ),
-        tool("get_nutrition_profile", "Obtiene perfil y objetivos.", """{"type":"object","properties":{}}"""),
+        // —— Lectura alimentación ——
+        tool(
+            "get_nutrition_overview",
+            "Vista general de alimentación: perfil, objetivos, planes, agua y totales de hoy.",
+            """{"type":"object","properties":{}}""",
+        ),
+        tool("get_nutrition_profile", "Obtiene perfil corporal y objetivos de macros/agua.", """{"type":"object","properties":{}}"""),
+        tool(
+            "list_nutrition_plans",
+            "Lista planes de alimentación guardados con macros.",
+            """{"type":"object","properties":{}}""",
+        ),
+        tool(
+            "get_day_log",
+            "Diario de un día: comidas, alimentos, macros y agua. Por defecto hoy.",
+            """{"type":"object","properties":{"day_epoch_day":{"type":"integer"}}}""",
+        ),
+        tool("list_foods", "Lista alimentos de la biblioteca del usuario.", """{"type":"object","properties":{}}"""),
+        tool(
+            "list_days_with_food",
+            "Días (epoch day) en los que hay comida registrada.",
+            """{"type":"object","properties":{"limit":{"type":"integer"}}}""",
+        ),
+        // —— Escritura alimentación ——
         tool(
             "update_nutrition_profile",
             "Actualiza perfil y recalcula macros.",
@@ -101,6 +162,11 @@ class FitiaToolExecutor(
             """{"type":"object","properties":{"meal_name":{"type":"string"},"food_name":{"type":"string"},"grams":{"type":"number"},"calories":{"type":"number"},"protein_g":{"type":"number"},"carbs_g":{"type":"number"},"fat_g":{"type":"number"},"day_epoch_day":{"type":"integer"}},"required":["meal_name","food_name","grams","calories"]}""",
         ),
         tool(
+            "add_water",
+            "Añade agua (ml) al día indicado (por defecto hoy).",
+            """{"type":"object","properties":{"amount_ml":{"type":"integer"},"day_epoch_day":{"type":"integer"}},"required":["amount_ml"]}""",
+        ),
+        tool(
             "create_food",
             "Crea un alimento en la biblioteca.",
             """{"type":"object","properties":{"name":{"type":"string"},"serving_grams":{"type":"number"},"calories":{"type":"number"},"protein_g":{"type":"number"},"carbs_g":{"type":"number"},"fat_g":{"type":"number"}},"required":["name","serving_grams","calories"]}""",
@@ -111,35 +177,64 @@ class FitiaToolExecutor(
         return runCatching {
             val args = json.parseToJsonElement(call.argumentsJson).jsonObject
             when (call.name) {
+                "get_training_overview" -> trainingOverview()
                 "list_exercises" -> {
                     val items = trainingRepository.observeExercises().first()
+                    items.joinToString(prefix = "[", postfix = "]") { it.toJson() }
+                }
+                "list_workouts" -> {
+                    val onlyGeneric = args.booleanOrNull("only_generic") ?: false
+                    val items = if (onlyGeneric) {
+                        trainingRepository.observeGenericWorkouts().first()
+                    } else {
+                        trainingRepository.observeWorkouts().first()
+                    }
+                    items.joinToString(prefix = "[", postfix = "]") { it.toSummaryJson() }
+                }
+                "get_workout" -> {
+                    val workout = trainingRepository.getWorkout(args.long("workout_id"))
+                        ?: return@runCatching """{"error":"workout_not_found"}"""
+                    workout.toDetailJson()
+                }
+                "list_training_plans" -> {
+                    val items = trainingRepository.observePlans().first()
                     items.joinToString(prefix = "[", postfix = "]") {
-                        """{"id":${it.id},"name":${it.name.json()},"muscle_group":${it.muscleGroup.json()}}"""
+                        """{"id":${it.id},"name":${it.name.json()},"workout_count":${it.workouts.size}}"""
                     }
                 }
+                "get_training_plan" -> {
+                    val plan = trainingRepository.getPlan(args.long("plan_id"))
+                        ?: return@runCatching """{"error":"plan_not_found"}"""
+                    plan.toDetailJson()
+                }
+                "list_sessions" -> {
+                    val limit = (args.intOrNull("limit") ?: 20).coerceIn(1, 100)
+                    val items = trainingRepository.observeSessions().first().take(limit)
+                    items.joinToString(prefix = "[", postfix = "]") { it.toSummaryJson() }
+                }
+                "get_session" -> {
+                    val session = trainingRepository.getSession(args.long("session_id"))
+                        ?: return@runCatching """{"error":"session_not_found"}"""
+                    session.toDetailJson()
+                }
+                "get_active_session" -> {
+                    val session = trainingRepository.observeActiveSession().first()
+                    session?.toDetailJson() ?: """{"active":false}"""
+                }
                 "create_exercise" -> {
+                    val muscleGroup = args.stringOrEmpty("muscle_group")
+                    val muscleId = trainingRepository.findOrCreateMuscleByName(muscleGroup)
                     val id = trainingRepository.saveExercise(
                         Exercise(
                             name = args.string("name"),
-                            muscleGroup = args.stringOrEmpty("muscle_group"),
+                            muscleId = muscleId,
+                            muscleGroup = muscleGroup,
                             notes = args.stringOrEmpty("notes"),
                         ),
                     )
                     """{"id":$id}"""
                 }
-                "list_workouts" -> {
-                    val items = trainingRepository.observeWorkouts().first()
-                    items.joinToString(prefix = "[", postfix = "]") {
-                        """{"id":${it.id},"name":${it.name.json()}}"""
-                    }
-                }
                 "create_workout" -> createWorkout(args)
-                "list_training_plans" -> {
-                    val items = trainingRepository.observePlans().first()
-                    items.joinToString(prefix = "[", postfix = "]") {
-                        """{"id":${it.id},"name":${it.name.json()}}"""
-                    }
-                }
                 "create_training_plan" -> {
                     val workoutIds = args["workout_ids"]?.jsonArray
                         ?.mapNotNull { it.jsonPrimitive.longOrNull }
@@ -149,6 +244,13 @@ class FitiaToolExecutor(
                         TrainingPlan(name = args.string("name"), workouts = workouts),
                     )
                     """{"id":$id}"""
+                }
+                "link_workout_to_plan" -> {
+                    trainingRepository.linkWorkoutToPlan(
+                        workoutId = args.long("workout_id"),
+                        planId = args.long("plan_id"),
+                    )
+                    """{"ok":true}"""
                 }
                 "start_session" -> {
                     val id = trainingRepository.startSessionFromWorkout(args.long("workout_id"))
@@ -169,10 +271,28 @@ class FitiaToolExecutor(
                     trainingRepository.finishSession(args.long("session_id"))
                     """{"ok":true}"""
                 }
+                "get_nutrition_overview" -> nutritionOverview()
                 "get_nutrition_profile" -> {
                     val profile = nutritionRepository.getProfile()
                     val targets = nutritionRepository.getTargets()
                     """{"profile":${profile.toJson()},"targets":${targets.toJson()}}"""
+                }
+                "list_nutrition_plans" -> {
+                    val items = nutritionRepository.observePlans().first()
+                    items.joinToString(prefix = "[", postfix = "]") { it.toJson() }
+                }
+                "get_day_log" -> {
+                    val day = args.longOrNull("day_epoch_day") ?: LocalDate.now().toEpochDay()
+                    dayLogJson(day)
+                }
+                "list_foods" -> {
+                    val items = nutritionRepository.observeFoods().first()
+                    items.joinToString(prefix = "[", postfix = "]") { it.toJson() }
+                }
+                "list_days_with_food" -> {
+                    val limit = (args.intOrNull("limit") ?: 30).coerceIn(1, 365)
+                    val days = nutritionRepository.observeDaysWithFood().first().take(limit)
+                    days.joinToString(prefix = "[", postfix = "]")
                 }
                 "update_nutrition_profile" -> {
                     val profile = BodyProfile(
@@ -222,6 +342,13 @@ class FitiaToolExecutor(
                     """{"ok":true}"""
                 }
                 "add_food_to_meal" -> addFoodToMeal(args)
+                "add_water" -> {
+                    val day = args.longOrNull("day_epoch_day") ?: LocalDate.now().toEpochDay()
+                    val amount = args.int("amount_ml")
+                    nutritionRepository.addWater(day, amount)
+                    val total = nutritionRepository.observeWaterTotal(day).first()
+                    """{"ok":true,"day_epoch_day":$day,"added_ml":$amount,"total_ml":$total}"""
+                }
                 "create_food" -> {
                     val id = nutritionRepository.saveFood(
                         FoodItem(
@@ -242,6 +369,67 @@ class FitiaToolExecutor(
         }
     }
 
+    private suspend fun trainingOverview(): String {
+        val plans = trainingRepository.observePlans().first()
+        val generic = trainingRepository.observeGenericWorkouts().first()
+        val exercises = trainingRepository.observeExercises().first()
+        val active = trainingRepository.observeActiveSession().first()
+        val recent = trainingRepository.observeSessions().first().take(5)
+        return buildString {
+            append("{")
+            append("\"plans\":")
+            append(plans.joinToString(prefix = "[", postfix = "]") {
+                """{"id":${it.id},"name":${it.name.json()},"workout_count":${it.workouts.size}}"""
+            })
+            append(",\"generic_workouts\":")
+            append(generic.joinToString(prefix = "[", postfix = "]") { it.toSummaryJson() })
+            append(",\"exercise_count\":")
+            append(exercises.size)
+            append(",\"active_session\":")
+            append(active?.toSummaryJson() ?: "null")
+            append(",\"recent_sessions\":")
+            append(recent.joinToString(prefix = "[", postfix = "]") { it.toSummaryJson() })
+            append("}")
+        }
+    }
+
+    private suspend fun nutritionOverview(): String {
+        val today = LocalDate.now().toEpochDay()
+        val profile = nutritionRepository.getProfile()
+        val targets = nutritionRepository.getTargets()
+        val plans = nutritionRepository.observePlans().first()
+        val dayLog = nutritionRepository.observeDayLog(today).first()
+        val water = nutritionRepository.observeWaterTotal(today).first()
+        val t = dayLog.totals
+        return buildString {
+            append("{")
+            append("\"today_epoch_day\":$today,")
+            append("\"profile\":${profile.toJson()},")
+            append("\"targets\":${targets.toJson()},")
+            append("\"plans\":")
+            append(plans.joinToString(prefix = "[", postfix = "]") { it.toJson() })
+            append(",\"today_totals\":")
+            append("""{"calories":${t.calories},"protein_g":${t.proteinGrams},"carbs_g":${t.carbsGrams},"fat_g":${t.fatGrams}}""")
+            append(",\"today_water_ml\":$water,")
+            append("\"meal_count\":${dayLog.meals.size}")
+            append("}")
+        }
+    }
+
+    private suspend fun dayLogJson(day: Long): String {
+        val dayLog = nutritionRepository.observeDayLog(day).first()
+        val water = nutritionRepository.observeWaterTotal(day).first()
+        val targets = nutritionRepository.getTargets()
+        val t = dayLog.totals
+        val meals = dayLog.meals.joinToString(prefix = "[", postfix = "]") { meal ->
+            val entries = meal.entries.joinToString(prefix = "[", postfix = "]") { e ->
+                """{"id":${e.id},"name":${e.name.json()},"grams":${e.grams},"calories":${e.calories},"protein_g":${e.proteinGrams},"carbs_g":${e.carbsGrams},"fat_g":${e.fatGrams}}"""
+            }
+            """{"id":${meal.id},"name":${meal.name.json()},"entries":$entries}"""
+        }
+        return """{"day_epoch_day":$day,"water_ml":$water,"targets":${targets.toJson()},"totals":{"calories":${t.calories},"protein_g":${t.proteinGrams},"carbs_g":${t.carbsGrams},"fat_g":${t.fatGrams}},"meals":$meals}"""
+    }
+
     private suspend fun createWorkout(args: JsonObject): String {
         val exercises = args["exercises"]?.jsonArray.orEmpty().mapIndexed { index, element ->
             val obj = element.jsonObject
@@ -254,7 +442,7 @@ class FitiaToolExecutor(
                     targetWeightKg = set.doubleOrNull("weight_kg"),
                     targetReps = set.intOrNull("reps"),
                 )
-            }.ifEmpty { listOf(SetTarget(setIndex = 0, targetReps = 10)) }
+            }
             WorkoutExercise(
                 exerciseId = exerciseId,
                 exerciseName = exercise?.name ?: "Ejercicio",
@@ -262,14 +450,19 @@ class FitiaToolExecutor(
                 setTargets = sets,
             )
         }
+        val planId = args.longOrNull("plan_id")
         val id = trainingRepository.saveWorkout(
             Workout(
                 name = args.string("name"),
                 notes = args.stringOrEmpty("notes"),
+                planId = planId,
                 exercises = exercises,
             ),
         )
-        return """{"id":$id}"""
+        if (planId != null) {
+            trainingRepository.linkWorkoutToPlan(workoutId = id, planId = planId)
+        }
+        return """{"id":$id,"plan_id":${planId ?: "null"},"is_generic":${planId == null}}"""
     }
 
     private suspend fun addFoodToMeal(args: JsonObject): String {
@@ -347,5 +540,45 @@ private fun BodyProfile?.toJson(): String {
 
 private fun MacroTargets?.toJson(): String {
     if (this == null) return "null"
-    return """{"calories":$calories,"protein_g":$proteinGrams,"carbs_g":$carbsGrams,"fat_g":$fatGrams,"maintenance":$maintenanceCalories}"""
+    return """{"calories":$calories,"protein_g":$proteinGrams,"carbs_g":$carbsGrams,"fat_g":$fatGrams,"maintenance":$maintenanceCalories,"water_ml_goal":$waterMlGoal,"manual_override":$manualOverride}"""
 }
+
+private fun Exercise.toJson(): String =
+    """{"id":$id,"name":${name.json()},"muscle_group":${muscleGroup.json()},"notes":${notes.json()}}"""
+
+private fun Workout.toSummaryJson(): String =
+    """{"id":$id,"name":${name.json()},"plan_id":${planId ?: "null"},"is_generic":$isGeneric,"exercise_count":${exercises.size}}"""
+
+private fun Workout.toDetailJson(): String {
+    val ex = exercises.joinToString(prefix = "[", postfix = "]") { we ->
+        val sets = we.setTargets.joinToString(prefix = "[", postfix = "]") { s ->
+            """{"set_index":${s.setIndex},"weight_kg":${s.targetWeightKg ?: "null"},"reps":${s.targetReps ?: "null"}}"""
+        }
+        """{"id":${we.id},"exercise_id":${we.exerciseId},"name":${we.exerciseName.json()},"sets":$sets}"""
+    }
+    return """{"id":$id,"name":${name.json()},"notes":${notes.json()},"plan_id":${planId ?: "null"},"is_generic":$isGeneric,"exercises":$ex}"""
+}
+
+private fun TrainingPlan.toDetailJson(): String {
+    val ws = workouts.joinToString(prefix = "[", postfix = "]") { it.toDetailJson() }
+    return """{"id":$id,"name":${name.json()},"notes":${notes.json()},"workouts":$ws}"""
+}
+
+private fun TrainingSession.toSummaryJson(): String =
+    """{"id":$id,"name":${name.json()},"status":"${status.name}","workout_id":${workoutId ?: "null"},"started_at_ms":$startedAtEpochMs,"finished_at_ms":${finishedAtEpochMs ?: "null"},"exercise_count":${exercises.size}}"""
+
+private fun TrainingSession.toDetailJson(): String {
+    val ex = exercises.joinToString(prefix = "[", postfix = "]") { se ->
+        val sets = se.sets.joinToString(prefix = "[", postfix = "]") { s ->
+            """{"id":${s.id},"set_index":${s.setIndex},"weight_kg":${s.weightKg ?: "null"},"reps":${s.reps ?: "null"},"completed":${s.isCompleted}}"""
+        }
+        """{"id":${se.id},"exercise_id":${se.exerciseId ?: "null"},"name":${se.name.json()},"sets":$sets}"""
+    }
+    return """{"id":$id,"name":${name.json()},"status":"${status.name}","workout_id":${workoutId ?: "null"},"started_at_ms":$startedAtEpochMs,"finished_at_ms":${finishedAtEpochMs ?: "null"},"exercises":$ex}"""
+}
+
+private fun NutritionPlan.toJson(): String =
+    """{"id":$id,"name":${name.json()},"calories":$calories,"protein_g":$proteinGrams,"carbs_g":$carbsGrams,"fat_g":$fatGrams}"""
+
+private fun FoodItem.toJson(): String =
+    """{"id":$id,"name":${name.json()},"brand":${brand.json()},"serving_grams":$servingGrams,"calories":$calories,"protein_g":$proteinGrams,"carbs_g":$carbsGrams,"fat_g":$fatGrams}"""

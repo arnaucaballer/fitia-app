@@ -10,6 +10,7 @@ import com.arnaucaballer.fitia.feature.chat.domain.FoodPhotoEstimator
 import com.arnaucaballer.fitia.feature.nutrition.domain.MealEntry
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionRepository
 import com.arnaucaballer.fitia.feature.settings.data.AiSettingsStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,7 +55,7 @@ class ChatViewModel(
     fun send(text: String) {
         val trimmed = text.trim()
         if (trimmed.isBlank() || _isLoading.value) return
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val settings = settingsStore.settings.value
             if (!settings.isConfigured) {
                 _error.value = "missing_api_key"
@@ -76,19 +77,23 @@ class ChatViewModel(
                     userText = trimmed,
                 )
             }.onSuccess { updated ->
+                val kept = if (updated.size <= MaxStoredMessages) {
+                    updated
+                } else {
+                    updated.takeLast(MaxStoredMessages)
+                }
                 history.clear()
-                history.addAll(updated)
-                val visible = updated
-                    .filter { it.role == ChatRole.User || it.role == ChatRole.Assistant }
-                    .filter { it.toolCalls.isEmpty() || it.text.isNotBlank() }
-                    .map { msg ->
-                        UiChatMessage(
-                            id = UUID.randomUUID().toString(),
-                            isUser = msg.role == ChatRole.User,
-                            text = msg.text.ifBlank { "(acción realizada)" },
-                        )
-                    }
-                _messages.value = visible
+                history.addAll(kept)
+                _messages.value = kept.mapIndexedNotNull { index, msg ->
+                    val visible = (msg.role == ChatRole.User || msg.role == ChatRole.Assistant) &&
+                        (msg.toolCalls.isEmpty() || msg.text.isNotBlank())
+                    if (!visible) return@mapIndexedNotNull null
+                    UiChatMessage(
+                        id = "$index-${msg.role}-${msg.text.hashCode()}",
+                        isUser = msg.role == ChatRole.User,
+                        text = msg.text.ifBlank { "(acción realizada)" },
+                    )
+                }
             }.onFailure { throwable ->
                 _error.value = throwable.message ?: "error"
                 _messages.value = _messages.value + UiChatMessage(
@@ -102,7 +107,7 @@ class ChatViewModel(
     }
 
     fun analyzeFoodPhoto(mimeType: String, base64: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val settings = settingsStore.settings.value
             if (!settings.isConfigured) {
                 _error.value = "missing_api_key"
@@ -126,7 +131,7 @@ class ChatViewModel(
     }
 
     fun confirmFoodEstimate(estimate: FoodPhotoEstimate, mealName: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val day = LocalDate.now().toEpochDay()
                 nutritionRepository.ensureDefaultMeals(day)
@@ -159,5 +164,9 @@ class ChatViewModel(
 
     fun clearError() {
         _error.value = null
+    }
+
+    private companion object {
+        const val MaxStoredMessages = 120
     }
 }

@@ -6,9 +6,9 @@ import com.arnaucaballer.fitia.core.ai.ChatContentPart
 import com.arnaucaballer.fitia.core.ai.ChatMessage
 import com.arnaucaballer.fitia.core.ai.ChatRole
 import com.arnaucaballer.fitia.core.ai.OpenAiCompatibleClient
+import com.arnaucaballer.fitia.feature.nutrition.domain.BodybuildingNutritionKnowledge
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionRepository
 import com.arnaucaballer.fitia.feature.training.domain.TrainingRepository
-import kotlinx.coroutines.flow.first
 
 class ChatOrchestrator(
     private val client: OpenAiCompatibleClient,
@@ -32,7 +32,7 @@ class ChatOrchestrator(
 
         // Enough tool rounds for complex asks; no artificial "message limit".
         var turns = 0
-        while (turns < 20) {
+        while (turns < 5) {
             turns += 1
             val result = client.complete(
                 settings = settings,
@@ -83,14 +83,35 @@ class ChatOrchestrator(
     }
 
     private suspend fun buildSystemPrompt(): String {
-        val plans = trainingRepository.observePlans().first().joinToString { it.name }
-        val workouts = trainingRepository.observeGenericWorkouts().first().joinToString { it.name }
+        val plans = trainingRepository.listPlanNames().joinToString()
+        val workouts = trainingRepository.listGenericWorkoutNames().joinToString()
         val profile = nutritionRepository.getProfile()
         val targets = nutritionRepository.getTargets()
         return """
             Eres Fitia, asistente de entrenamiento y alimentación en español.
             Puedes consultar y modificar datos de la app usando tools.
             Formato: responde en Markdown (negrita, listas, títulos cortos) cuando ayude a leer.
+
+            Modelo de entrenamiento:
+            - Un plan es un conjunto de entrenamientos.
+            - Entrenamiento genérico (plan_id null): vive en la biblioteca y puede enlazarse a varios planes.
+            - Entrenamiento del plan (plan_id = id del plan): solo existe dentro de ese plan.
+            - Al crear un plan, pregunta si quiere días personalizados o reutilizar genéricos.
+
+            Datos reales — clasifica y consulta solo lo relevante:
+            1) Antes de buscar, decide si el mensaje habla de ENTRENAMIENTO, de ALIMENTACIÓN, o de ambos.
+               - Entrenamiento: planes, entrenos, ejercicios, series, pesos, reps, sesión, historial de gym.
+               - Alimentación: perfil, macros, kcal, comidas, alimentos, diario, agua, planes de dieta.
+               - Ambos solo si el usuario mezcla ambos temas (ej. "cómo voy de entreno y de comida").
+            2) Llama solo a tools del dominio detectado:
+               - Entrenamiento → get_training_overview, list_*/get_workout, get_training_plan,
+                 get_session, get_active_session, list_exercises, list_sessions…
+               - Alimentación → get_nutrition_overview, get_nutrition_profile, get_day_log,
+                 list_foods, list_nutrition_plans, list_days_with_food…
+               - No llames tools del otro dominio “por si acaso”.
+            3) Usa tools de lectura ANTES de responder con datos concretos.
+            4) No inventes ejercicios, series, comidas ni números: léelos con tools.
+            5) El resumen abajo es solo un atajo; el detalle está en las tools.
 
             Regla principal — no crees ni modifiques nada de primeras:
             1) Lo primero es preguntar cómo lo quiere el usuario (objetivo, preferencias, restricciones).
@@ -102,14 +123,16 @@ class ChatOrchestrator(
 
             Sé claro y confirma las acciones cuando las hagas.
             Macros y nutrición: máxima precisión (valores específicos, no redondeos vagos).
+            Cuando hables de comida, usa la referencia de nutrición y culturismo que va a continuación:
+            adapta los rangos al perfil real, da gramos y macros, y no inventes kcal de alimentos.
             El usuario puede chatear sin límite de mensajes.
 
             Resumen actual:
             - Planes de entreno: ${plans.ifBlank { "ninguno" }}
             - Entrenamientos genéricos: ${workouts.ifBlank { "ninguno" }}
             - Perfil: ${profile?.let { "${it.weightKg} kg, ${it.heightCm} cm, ${it.ageYears} años, ${it.goal}" } ?: "sin perfil"}
-            - Objetivos del día: ${targets?.let { "${it.calories} kcal / P ${it.proteinGrams} / C ${it.carbsGrams} / G ${it.fatGrams}" } ?: "sin objetivos"}
-        """.trimIndent()
+            - Objetivos del día: ${targets?.let { "${it.calories} kcal / P ${it.proteinGrams} / C ${it.carbsGrams} / G ${it.fatGrams} / agua ${it.waterMlGoal} ml" } ?: "sin objetivos"}
+        """.trimIndent() + "\n\n" + BodybuildingNutritionKnowledge.promptBlock()
     }
 
     companion object {

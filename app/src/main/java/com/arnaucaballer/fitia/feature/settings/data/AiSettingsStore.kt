@@ -1,6 +1,7 @@
 package com.arnaucaballer.fitia.feature.settings.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.arnaucaballer.fitia.core.ai.AiModelCatalog
@@ -13,15 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class AiSettingsStore(
     context: Context,
 ) {
-    private val prefs = EncryptedSharedPreferences.create(
-        context.applicationContext,
-        "fitia_ai_settings",
-        MasterKey.Builder(context.applicationContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build(),
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-    )
+    private val prefs = openPrefs(context.applicationContext)
 
     private val _settings = MutableStateFlow(read())
     val settings: StateFlow<AiSettings> = _settings.asStateFlow()
@@ -37,20 +30,41 @@ class AiSettingsStore(
     }
 
     private fun read(): AiSettings {
-        val providerName = prefs.getString(KEY_PROVIDER, AiProviderPreset.OpenRouter.name)
-        val provider = runCatching { AiProviderPreset.valueOf(providerName!!) }
-            .getOrDefault(AiProviderPreset.OpenRouter)
-        return AiSettings(
-            provider = provider,
-            apiKey = prefs.getString(KEY_API_KEY, "").orEmpty(),
-            model = prefs.getString(KEY_MODEL, AiModelCatalog.AUTOMATIC_ID).orEmpty()
-                .ifBlank { AiModelCatalog.AUTOMATIC_ID },
-            baseUrlOverride = prefs.getString(KEY_BASE_URL, "").orEmpty(),
-        )
+        return try {
+            val providerName = prefs.getString(KEY_PROVIDER, AiProviderPreset.OpenRouter.name)
+            val provider = runCatching { AiProviderPreset.valueOf(providerName!!) }
+                .getOrDefault(AiProviderPreset.OpenRouter)
+            AiSettings(
+                provider = provider,
+                apiKey = prefs.getString(KEY_API_KEY, "").orEmpty(),
+                model = prefs.getString(KEY_MODEL, AiModelCatalog.AUTOMATIC_ID).orEmpty()
+                    .ifBlank { AiModelCatalog.AUTOMATIC_ID },
+                baseUrlOverride = prefs.getString(KEY_BASE_URL, "").orEmpty(),
+            )
+        } catch (_: Throwable) {
+            AiSettings()
+        }
     }
 
     private companion object {
+        const val PREFS_NAME = "fitia_ai_settings"
         const val KEY_PROVIDER = "provider"
+
+        fun openPrefs(context: Context): SharedPreferences {
+            return try {
+                EncryptedSharedPreferences.create(
+                    context,
+                    PREFS_NAME,
+                    MasterKey.Builder(context)
+                        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                        .build(),
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+                )
+            } catch (_: Throwable) {
+                context.getSharedPreferences("${PREFS_NAME}_plain", Context.MODE_PRIVATE)
+            }
+        }
         const val KEY_API_KEY = "api_key"
         const val KEY_MODEL = "model"
         const val KEY_BASE_URL = "base_url"
