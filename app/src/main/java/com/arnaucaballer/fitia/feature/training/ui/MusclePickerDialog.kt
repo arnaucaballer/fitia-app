@@ -18,9 +18,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -158,7 +161,8 @@ private fun BodyStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 12.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
@@ -195,8 +199,8 @@ private fun BodyStep(
         AnimatedContent(
             targetState = front,
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .heightIn(min = 320.dp, max = 520.dp),
             transitionSpec = { fadeIn(fade) togetherWith fadeOut(fade) },
             label = "bodySide",
         ) { side ->
@@ -235,7 +239,7 @@ private fun BodyStep(
                 }
             }
         }
-        Box(Modifier.padding(bottom = 8.dp))
+        Box(Modifier.padding(bottom = 16.dp))
     }
 }
 
@@ -248,7 +252,8 @@ private fun DetailStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 12.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
@@ -264,8 +269,8 @@ private fun DetailStep(
             onPart = { expandedPart = it },
             onChoosePart = onPick,
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .heightIn(min = 320.dp, max = 520.dp),
         )
         GeneralMuscleButton(
             name = zone.generalName,

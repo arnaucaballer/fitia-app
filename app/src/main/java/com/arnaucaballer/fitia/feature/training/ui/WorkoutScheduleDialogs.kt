@@ -1,5 +1,6 @@
 package com.arnaucaballer.fitia.feature.training.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.arnaucaballer.fitia.R
-import com.arnaucaballer.fitia.design.FitiaPrimaryButton
 import com.arnaucaballer.fitia.design.FitiaSecondaryButton
 import com.arnaucaballer.fitia.feature.training.domain.Workout
 
@@ -38,14 +38,17 @@ fun WorkoutDayAssignDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 6.dp),
+                                .clickable { onPick(workout) }
+                                .padding(vertical = 10.dp),
                         ) {
                             Text(workout.name, style = MaterialTheme.typography.titleMedium)
-                            FitiaSecondaryButton(
-                                text = stringResource(R.string.training_schedule_assign),
-                                onClick = { onPick(workout) },
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
+                            if (!workout.isGeneric) {
+                                Text(
+                                    text = stringResource(R.string.training_workout_type_plan_only),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                     }
                 }
@@ -85,20 +88,22 @@ fun WorkoutTrainChoiceDialog(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 6.dp),
+                                    .clickable { onStartWorkout(workout) }
+                                    .padding(vertical = 10.dp),
                             ) {
                                 Text(workout.name, style = MaterialTheme.typography.titleMedium)
-                                if (!workout.isGeneric) {
-                                    Text(
-                                        text = stringResource(R.string.training_workout_type_plan_only),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                                FitiaPrimaryButton(
-                                    text = stringResource(R.string.training_start_session),
-                                    onClick = { onStartWorkout(workout) },
-                                    modifier = Modifier.padding(top = 6.dp),
+                                Text(
+                                    text = if (workout.isGeneric) {
+                                        stringResource(R.string.training_workout_type_generic)
+                                    } else {
+                                        stringResource(R.string.training_workout_type_plan_only)
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (workout.isGeneric) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
                                 )
                             }
                         }

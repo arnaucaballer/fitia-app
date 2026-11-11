@@ -19,7 +19,7 @@ printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
 ./gradlew :app:assembleDebug
 ```
 
-El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.33.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados).
+El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.34.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados).
 
 ## Probar aquí (emulador en WSL)
 

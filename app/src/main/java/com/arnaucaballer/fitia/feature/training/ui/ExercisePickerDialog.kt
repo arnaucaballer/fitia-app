@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -81,7 +83,7 @@ fun ExercisePickerDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (filtered.isNotEmpty()) Modifier.fillMaxHeight() else Modifier)
+                .fillMaxHeight()
                 .navigationBarsPadding()
                 .imePadding()
                 .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
@@ -102,6 +104,9 @@ fun ExercisePickerDialog(
                         text = stringResource(R.string.training_picker_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState()),
                     )
                 }
                 nothingMatches -> {
@@ -109,6 +114,9 @@ fun ExercisePickerDialog(
                         text = stringResource(R.string.training_picker_no_match),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState()),
                     )
                 }
                 else -> {

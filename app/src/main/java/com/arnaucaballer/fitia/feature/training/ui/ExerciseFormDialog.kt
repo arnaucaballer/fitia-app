@@ -3,13 +3,18 @@ package com.arnaucaballer.fitia.feature.training.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Add
@@ -89,40 +94,45 @@ fun ExerciseFormDialog(
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = null,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(text = title, style = MaterialTheme.typography.titleLarge)
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.field_name)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-            MuscleSelectionField(
-                muscles = selected,
-                onOpen = { showMap = true },
-                onRemove = { id -> selected = selected.filterNot { it.id == id } },
-            )
-            if (selected.size > 1) {
-                Text(
-                    text = stringResource(R.string.training_muscle_primary_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxHeight)
+                    .imePadding()
+                    .navigationBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(text = title, style = MaterialTheme.typography.titleLarge)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.field_name)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                 )
-            }
-            FitiaPrimaryButton(
-                text = stringResource(R.string.action_save),
-                onClick = { onConfirm(name.trim(), selected.map { it.id }) },
-                enabled = name.isNotBlank() && selected.isNotEmpty(),
-            )
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
+                MuscleSelectionField(
+                    muscles = selected,
+                    onOpen = { showMap = true },
+                    onRemove = { id -> selected = selected.filterNot { it.id == id } },
+                )
+                if (selected.size > 1) {
+                    Text(
+                        text = stringResource(R.string.training_muscle_primary_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                FitiaPrimaryButton(
+                    text = stringResource(R.string.action_save),
+                    onClick = { onConfirm(name.trim(), selected.map { it.id }) },
+                    enabled = name.isNotBlank() && selected.isNotEmpty(),
+                )
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         }
     }
