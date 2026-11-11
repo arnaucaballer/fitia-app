@@ -13,8 +13,10 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.MealEntry
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionPlan
 import com.arnaucaballer.fitia.feature.nutrition.domain.NutritionRepository
 import com.arnaucaballer.fitia.feature.nutrition.domain.WaterLog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
 class RoomNutritionRepository(
@@ -101,7 +103,7 @@ class RoomNutritionRepository(
                     )
                 },
             )
-        }
+        }.flowOn(Dispatchers.Default)
     }
 
     override suspend fun ensureDefaultMeals(dayEpochDay: Long) {

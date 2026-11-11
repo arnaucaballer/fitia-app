@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import com.arnaucaballer.fitia.R
 
 @Composable
@@ -23,12 +23,17 @@ fun AnatomyPlate(
     cropBottom: Float = 1f,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val image = ImageBitmap.imageResource(
+    val image = rememberBodyBitmap(
         if (front) R.drawable.body_front else R.drawable.body_back,
     )
     val cropWidth = (cropRight - cropLeft).coerceAtLeast(0.05f)
     val cropHeight = (cropBottom - cropTop).coerceAtLeast(0.05f)
-    val aspect = (image.width * cropWidth) / (image.height * cropHeight)
+    val bitmapAspect = if (image != null) {
+        image.width.toFloat() / image.height.toFloat()
+    } else {
+        bodyAspect(front)
+    }
+    val aspect = bitmapAspect * cropWidth / cropHeight
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -40,9 +45,14 @@ fun AnatomyPlate(
                     .size(drawWidth, drawHeight)
                     .align(Alignment.Center),
             ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
+                ) {
+                    val bitmap = image ?: return@Canvas
                     drawBodyRegion(
-                        image = image,
+                        image = bitmap,
                         left = cropLeft,
                         top = cropTop,
                         right = cropRight,

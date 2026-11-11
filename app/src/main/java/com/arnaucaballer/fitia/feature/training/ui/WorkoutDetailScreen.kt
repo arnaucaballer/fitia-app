@@ -39,8 +39,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.flowOf
 import com.arnaucaballer.fitia.R
 import com.arnaucaballer.fitia.design.FitiaCard
 import com.arnaucaballer.fitia.design.FitiaCardShape
@@ -90,6 +93,7 @@ fun WorkoutDetailScreen(
                 saveExerciseUseCase = c.saveExerciseUseCase,
                 saveMuscleUseCase = c.saveMuscleUseCase,
                 saveWorkoutUseCase = c.saveWorkoutUseCase,
+                updateWorkoutSetTargetUseCase = c.updateWorkoutSetTargetUseCase,
                 deleteWorkoutUseCase = c.deleteWorkoutUseCase,
                 startSessionFromWorkoutUseCase = c.startSessionFromWorkoutUseCase,
             )
@@ -98,12 +102,17 @@ fun WorkoutDetailScreen(
     val workout by viewModel.workout.collectAsStateWithLifecycle()
     val lastSessionAtEpochMs by viewModel.lastSessionAtEpochMs.collectAsStateWithLifecycle()
     val previousSessions by viewModel.previousSessions.collectAsStateWithLifecycle()
-    val library by viewModel.exercises.collectAsStateWithLifecycle()
-    val muscles by viewModel.muscles.collectAsStateWithLifecycle()
     var showPicker by rememberSaveable { mutableStateOf(false) }
     var showCreateExercise by rememberSaveable { mutableStateOf(false) }
     var newExerciseName by rememberSaveable { mutableStateOf("") }
     var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
+    val showLibrary = showPicker || showCreateExercise
+    val library by remember(showLibrary) {
+        if (showLibrary) viewModel.exercises else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
+    val muscles by remember(showCreateExercise) {
+        if (showCreateExercise) viewModel.muscles else flowOf(emptyList())
+    }.collectAsStateWithLifecycle(emptyList())
 
     LaunchedEffect(Unit) {
         viewModel.sessionStarted.collect(onOpenSession)
@@ -143,10 +152,12 @@ fun WorkoutDetailScreen(
             )
         },
     ) { padding ->
-        val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
-        val listBottom = with(LocalDensity.current) {
-            if (imeBottom > 0) 80.dp else 24.dp
+        val density = LocalDensity.current
+        val ime = WindowInsets.ime
+        val keyboardOpen by remember(ime, density) {
+            derivedStateOf { ime.getBottom(density) > 0 }
         }
+        val listBottom = if (keyboardOpen) 80.dp else 24.dp
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -211,14 +222,15 @@ fun WorkoutDetailScreen(
             }
 
             items(exercises, key = { it.sortOrder }) { exercise ->
+                val sortOrder = exercise.sortOrder
                 WorkoutExerciseEditor(
                     exercise = exercise,
-                    onAddSet = { viewModel.addSet(exercise.sortOrder) },
-                    onRemoveSet = { setIndex -> viewModel.removeSet(exercise.sortOrder, setIndex) },
-                    onRemove = { viewModel.removeExercise(exercise.sortOrder) },
-                    onUpdateSet = { setIndex, weight, reps ->
-                        viewModel.updateSet(exercise.sortOrder, setIndex, weight, reps)
-                    },
+                    onAddSet = remember(sortOrder) { { viewModel.addSet(sortOrder) } },
+                    onRemoveSet = remember(sortOrder) { { setIndex -> viewModel.removeSet(sortOrder, setIndex) } },
+                    onRemove = remember(sortOrder) { { viewModel.removeExercise(sortOrder) } },
+                    onUpdateSet = remember(sortOrder) { { setIndex, weight, reps ->
+                        viewModel.updateSet(sortOrder, setIndex, weight, reps)
+                    } },
                 )
             }
 
@@ -367,14 +379,13 @@ private fun WorkoutExerciseEditor(
                     )
                 }
                 exercise.setTargets.forEach { target ->
+                    val setIndex = target.setIndex
                     SetTargetRow(
-                        setNumber = target.setIndex + 1,
+                        setNumber = setIndex + 1,
                         weightKg = target.targetWeightKg,
                         reps = target.targetReps,
-                        onCommit = { weight, reps ->
-                            onUpdateSet(target.setIndex, weight, reps)
-                        },
-                        onRemove = { onRemoveSet(target.setIndex) },
+                        onCommit = remember(setIndex) { { weight, reps -> onUpdateSet(setIndex, weight, reps) } },
+                        onRemove = remember(setIndex) { { onRemoveSet(setIndex) } },
                     )
                 }
                 TextButton(onClick = onAddSet) {

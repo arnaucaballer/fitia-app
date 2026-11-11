@@ -97,6 +97,10 @@ private sealed class MdBlock {
     data class Paragraph(val text: String) : MdBlock()
 }
 
+private val headingLine = Regex("^#{1,3}\\s+.+")
+private val bulletLine = Regex("^[-*]\\s+.+")
+private val numberedLine = Regex("^\\d+\\.\\s+.+")
+
 private fun parseMarkdownBlocks(raw: String): List<MdBlock> {
     val lines = raw.replace("\r\n", "\n").split('\n')
     val blocks = mutableListOf<MdBlock>()
@@ -122,16 +126,16 @@ private fun parseMarkdownBlocks(raw: String): List<MdBlock> {
                 }
                 blocks += MdBlock.Code(code.toString())
             }
-            trimmed.matches(Regex("^#{1,3}\\s+.+")) -> {
+            trimmed.matches(headingLine) -> {
                 flushParagraph()
                 val level = trimmed.takeWhile { it == '#' }.length
                 blocks += MdBlock.Heading(level, trimmed.drop(level).trim())
             }
-            trimmed.matches(Regex("^[-*]\\s+.+")) -> {
+            trimmed.matches(bulletLine) -> {
                 flushParagraph()
                 blocks += MdBlock.Bullet(trimmed.drop(2).trim())
             }
-            trimmed.matches(Regex("^\\d+\\.\\s+.+")) -> {
+            trimmed.matches(numberedLine) -> {
                 flushParagraph()
                 val dot = trimmed.indexOf('.')
                 val index = trimmed.take(dot).toIntOrNull() ?: 1

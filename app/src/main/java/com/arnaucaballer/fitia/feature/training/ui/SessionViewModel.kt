@@ -7,6 +7,7 @@ import com.arnaucaballer.fitia.feature.training.domain.FinishSessionUseCase
 import com.arnaucaballer.fitia.feature.training.domain.GetSessionUseCase
 import com.arnaucaballer.fitia.feature.training.domain.LogSessionSetUseCase
 import com.arnaucaballer.fitia.feature.training.domain.TrainingSession
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,6 +30,8 @@ class SessionViewModel(
     private val _finished = MutableSharedFlow<Unit>()
     val finished: SharedFlow<Unit> = _finished.asSharedFlow()
 
+    private var writeJob: Job = viewModelScope.launch { }
+
     init {
         refresh()
     }
@@ -47,7 +50,7 @@ class SessionViewModel(
         reps: Int?,
         isCompleted: Boolean,
     ) {
-        viewModelScope.launch {
+        enqueueWrite {
             logSessionSetUseCase(
                 sessionExerciseId = sessionExerciseId,
                 setId = setId,
@@ -56,29 +59,37 @@ class SessionViewModel(
                 reps = reps,
                 isCompleted = isCompleted,
             )
-            refresh()
         }
     }
 
     fun addSet(sessionExerciseId: Long) {
         val exercise = _session.value?.exercises?.firstOrNull { it.id == sessionExerciseId } ?: return
-        viewModelScope.launch {
+        val setIndex = exercise.sets.size
+        enqueueWrite {
             logSessionSetUseCase(
                 sessionExerciseId = sessionExerciseId,
                 setId = null,
-                setIndex = exercise.sets.size,
+                setIndex = setIndex,
                 weightKg = null,
                 reps = null,
                 isCompleted = false,
             )
-            refresh()
+            _session.value = getSessionUseCase(sessionId)
         }
     }
 
     fun removeSet(setId: Long) {
-        viewModelScope.launch {
+        enqueueWrite {
             deleteSessionSetUseCase(setId)
-            refresh()
+            _session.value = getSessionUseCase(sessionId)
+        }
+    }
+
+    private fun enqueueWrite(block: suspend () -> Unit) {
+        val previous = writeJob
+        writeJob = viewModelScope.launch {
+            previous.join()
+            block()
         }
     }
 

@@ -29,6 +29,9 @@ interface TrainingDao {
     @Query("SELECT * FROM exercises WHERE id = :id")
     suspend fun getExercise(id: Long): ExerciseEntity?
 
+    @Query("SELECT * FROM exercises WHERE id IN (:ids)")
+    suspend fun getExercisesByIds(ids: List<Long>): List<ExerciseEntity>
+
     @Query("SELECT * FROM exercise_muscles ORDER BY exerciseId ASC, sortOrder ASC")
     fun observeExerciseMuscles(): Flow<List<ExerciseMuscleEntity>>
 
@@ -59,6 +62,9 @@ interface TrainingDao {
     @Query("SELECT * FROM workouts WHERE id = :id")
     suspend fun getWorkout(id: Long): WorkoutEntity?
 
+    @Query("SELECT * FROM workouts WHERE id IN (:ids)")
+    suspend fun getWorkoutsByIds(ids: List<Long>): List<WorkoutEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertWorkout(entity: WorkoutEntity): Long
 
@@ -68,6 +74,9 @@ interface TrainingDao {
     @Query("SELECT * FROM workout_exercises WHERE workoutId = :workoutId ORDER BY sortOrder ASC")
     suspend fun getWorkoutExercises(workoutId: Long): List<WorkoutExerciseEntity>
 
+    @Query("SELECT * FROM workout_exercises WHERE workoutId IN (:workoutIds) ORDER BY sortOrder ASC")
+    suspend fun getWorkoutExercisesFor(workoutIds: List<Long>): List<WorkoutExerciseEntity>
+
     @Query("DELETE FROM workout_exercises WHERE workoutId = :workoutId")
     suspend fun clearWorkoutExercises(workoutId: Long)
 
@@ -76,6 +85,23 @@ interface TrainingDao {
 
     @Query("SELECT * FROM workout_set_targets WHERE workoutExerciseId = :workoutExerciseId ORDER BY setIndex ASC")
     suspend fun getSetTargets(workoutExerciseId: Long): List<WorkoutSetTargetEntity>
+
+    @Query("SELECT * FROM workout_set_targets WHERE workoutExerciseId IN (:ids) ORDER BY setIndex ASC")
+    suspend fun getSetTargetsFor(ids: List<Long>): List<WorkoutSetTargetEntity>
+
+    @Query(
+        """
+        UPDATE workout_set_targets
+        SET targetWeightKg = :weightKg, targetReps = :reps
+        WHERE workoutExerciseId = :workoutExerciseId AND setIndex = :setIndex
+        """,
+    )
+    suspend fun updateSetTarget(
+        workoutExerciseId: Long,
+        setIndex: Int,
+        weightKg: Double?,
+        reps: Int?,
+    ): Int
 
     @Insert
     suspend fun insertSetTargets(entities: List<WorkoutSetTargetEntity>)
@@ -149,6 +175,9 @@ interface TrainingDao {
 
     @Query("SELECT * FROM session_sets WHERE sessionExerciseId = :sessionExerciseId ORDER BY setIndex ASC")
     suspend fun getSessionSets(sessionExerciseId: Long): List<SessionSetEntity>
+
+    @Query("SELECT * FROM session_sets WHERE sessionExerciseId IN (:ids) ORDER BY setIndex ASC")
+    suspend fun getSessionSetsFor(ids: List<Long>): List<SessionSetEntity>
 
     @Query("SELECT * FROM session_sets WHERE id = :setId")
     suspend fun getSessionSet(setId: Long): SessionSetEntity?

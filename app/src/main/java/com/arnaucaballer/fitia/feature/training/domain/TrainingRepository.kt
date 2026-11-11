@@ -18,6 +18,13 @@ interface TrainingRepository {
     fun observeGenericWorkouts(): Flow<List<Workout>>
     suspend fun getWorkout(id: Long): Workout?
     suspend fun saveWorkout(workout: Workout): Long
+    /** Updates one logged target. Returns false when that row is not in the database yet. */
+    suspend fun updateWorkoutSetTarget(
+        workoutExerciseId: Long,
+        setIndex: Int,
+        weightKg: Double?,
+        reps: Int?,
+    ): Boolean
     suspend fun deleteWorkout(id: Long)
     /** Links an existing workout (usually generic) into a plan without copying. */
     suspend fun linkWorkoutToPlan(workoutId: Long, planId: Long)

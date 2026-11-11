@@ -48,6 +48,7 @@ import com.arnaucaballer.fitia.feature.training.domain.ObserveWorkoutsUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SaveExerciseUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SavePlanUseCase
 import com.arnaucaballer.fitia.feature.training.domain.SaveWorkoutUseCase
+import com.arnaucaballer.fitia.feature.training.domain.UpdateWorkoutSetTargetUseCase
 import com.arnaucaballer.fitia.feature.training.domain.StartBlankSessionUseCase
 import com.arnaucaballer.fitia.feature.training.domain.StartSessionFromWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.TrainingPlanGenerator
@@ -91,6 +92,7 @@ class AppContainer(
     val observeGenericWorkoutsUseCase = ObserveGenericWorkoutsUseCase(trainingRepository)
     val getWorkoutUseCase = GetWorkoutUseCase(trainingRepository)
     val saveWorkoutUseCase = SaveWorkoutUseCase(trainingRepository)
+    val updateWorkoutSetTargetUseCase = UpdateWorkoutSetTargetUseCase(trainingRepository)
     val deleteWorkoutUseCase = DeleteWorkoutUseCase(trainingRepository)
 
     val observePlansUseCase = ObservePlansUseCase(trainingRepository)

@@ -26,10 +26,12 @@ import com.arnaucaballer.fitia.core.database.WorkoutScheduleEntity
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
 class RoomTrainingRepository(
@@ -78,7 +80,7 @@ class RoomTrainingRepository(
                 val resolved = entity.muscleId?.let { muscleNames[it] }.orEmpty()
                 entity.toDomain(resolvedMuscleName = resolved, resolvedMuscles = rows)
             }
-        }.distinctUntilChanged()
+        }.flowOn(Dispatchers.Default).distinctUntilChanged()
 
     override suspend fun listPlanNames(): List<String> = dao.listPlanNames()
 
@@ -131,15 +133,37 @@ class RoomTrainingRepository(
     override fun observeGenericWorkouts(): Flow<List<Workout>> =
         dao.observeGenericWorkouts().map { list -> list.map { it.toDomainSummary() } }
 
-    override suspend fun getWorkout(id: Long): Workout? {
-        val workout = dao.getWorkout(id) ?: return null
-        val links = dao.getWorkoutExercises(id)
-        val exercises = links.map { link ->
-            val exerciseName = dao.getExercise(link.exerciseId)?.name ?: "Ejercicio"
-            val targets = dao.getSetTargets(link.id).map { it.toDomain() }
-            link.toDomain(exerciseName, targets)
+    override suspend fun getWorkout(id: Long): Workout? = loadWorkouts(listOf(id)).firstOrNull()
+
+    private suspend fun loadWorkouts(ids: List<Long>): List<Workout> {
+        if (ids.isEmpty()) return emptyList()
+        val workouts = dao.getWorkoutsByIds(ids)
+        if (workouts.isEmpty()) return emptyList()
+        val links = dao.getWorkoutExercisesFor(workouts.map { it.id })
+        val exerciseIds = links.map { it.exerciseId }.distinct()
+        val names = if (exerciseIds.isEmpty()) {
+            emptyMap()
+        } else {
+            dao.getExercisesByIds(exerciseIds).associate { it.id to it.name }
         }
-        return workout.toDomainSummary().copy(exercises = exercises)
+        val linkIds = links.map { it.id }
+        val targetsByLink = if (linkIds.isEmpty()) {
+            emptyMap()
+        } else {
+            dao.getSetTargetsFor(linkIds).groupBy { it.workoutExerciseId }
+        }
+        val linksByWorkout = links.groupBy { it.workoutId }
+        return workouts.map { workout ->
+            val exercises = linksByWorkout[workout.id].orEmpty()
+                .sortedBy { it.sortOrder }
+                .map { link ->
+                    val targets = targetsByLink[link.id].orEmpty()
+                        .sortedBy { it.setIndex }
+                        .map { it.toDomain() }
+                    link.toDomain(names[link.exerciseId] ?: "Ejercicio", targets)
+                }
+            workout.toDomainSummary().copy(exercises = exercises)
+        }
     }
 
     override suspend fun saveWorkout(workout: Workout): Long {
@@ -163,6 +187,16 @@ class RoomTrainingRepository(
         }
         dao.replaceWorkoutStructure(workoutId, exerciseRows, targets)
         return workoutId
+    }
+
+    override suspend fun updateWorkoutSetTarget(
+        workoutExerciseId: Long,
+        setIndex: Int,
+        weightKg: Double?,
+        reps: Int?,
+    ): Boolean {
+        if (workoutExerciseId == 0L) return false
+        return dao.updateSetTarget(workoutExerciseId, setIndex, weightKg, reps) > 0
     }
 
     override suspend fun deleteWorkout(id: Long) {
@@ -225,12 +259,13 @@ class RoomTrainingRepository(
                     .mapNotNull { link -> workoutById[link.workoutId]?.toDomainSummary() }
                 plan.toDomainSummary().copy(workouts = planWorkouts)
             }
-        }.distinctUntilChanged()
+        }.flowOn(Dispatchers.Default).distinctUntilChanged()
 
     override suspend fun getPlan(id: Long): TrainingPlan? {
         val plan = dao.getPlan(id) ?: return null
         val links = dao.getPlanWorkouts(id)
-        val workouts = links.mapNotNull { link -> getWorkout(link.workoutId) }
+        val byId = loadWorkouts(links.map { it.workoutId }).associateBy { it.id }
+        val workouts = links.mapNotNull { link -> byId[link.workoutId] }
         return plan.toDomainSummary().copy(workouts = workouts)
     }
 
@@ -271,11 +306,7 @@ class RoomTrainingRepository(
 
     override suspend fun getSession(id: Long): TrainingSession? {
         val session = dao.getSession(id) ?: return null
-        val exercises = dao.getSessionExercises(id).map { exercise ->
-            val sets = dao.getSessionSets(exercise.id).map { it.toDomain() }
-            exercise.toDomain(sets)
-        }
-        return session.toDomainSummary().copy(exercises = exercises)
+        return hydrateSession(session)
     }
 
     override suspend fun getLatestSessionForWorkout(workoutId: Long): TrainingSession? {
@@ -283,11 +314,24 @@ class RoomTrainingRepository(
             workoutId = workoutId,
             status = SessionStatusValues.COMPLETED,
         ) ?: return null
-        val exercises = dao.getSessionExercises(session.id).map { exercise ->
-            val sets = dao.getSessionSets(exercise.id).map { it.toDomain() }
-            exercise.toDomain(sets)
+        return hydrateSession(session)
+    }
+
+    private suspend fun hydrateSession(session: SessionEntity): TrainingSession {
+        val exercises = dao.getSessionExercises(session.id)
+        val setsByExercise = if (exercises.isEmpty()) {
+            emptyMap()
+        } else {
+            dao.getSessionSetsFor(exercises.map { it.id }).groupBy { it.sessionExerciseId }
         }
-        return session.toDomainSummary().copy(exercises = exercises)
+        return session.toDomainSummary().copy(
+            exercises = exercises.map { exercise ->
+                val sets = setsByExercise[exercise.id].orEmpty()
+                    .sortedBy { it.setIndex }
+                    .map { it.toDomain() }
+                exercise.toDomain(sets)
+            },
+        )
     }
 
     override suspend fun startSessionFromWorkout(workoutId: Long): Long {

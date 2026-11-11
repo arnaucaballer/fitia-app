@@ -29,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -78,7 +79,11 @@ fun FitiaApp() {
     val selectedTab = FitiaDestination.entries.first { it.route == selectedRoute }
     val openedTabs = remember { mutableStateListOf(selectedTab) }
     var slideForward by remember { mutableStateOf(true) }
-    val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val density = LocalDensity.current
+    val ime = WindowInsets.ime
+    val keyboardOpen by remember(ime, density) {
+        derivedStateOf { ime.getBottom(density) > 0 }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

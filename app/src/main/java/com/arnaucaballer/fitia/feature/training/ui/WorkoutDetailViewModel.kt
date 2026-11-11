@@ -18,9 +18,11 @@ import com.arnaucaballer.fitia.feature.training.domain.SetTarget
 import com.arnaucaballer.fitia.feature.training.domain.SessionStatus
 import com.arnaucaballer.fitia.feature.training.domain.StartSessionFromWorkoutUseCase
 import com.arnaucaballer.fitia.feature.training.domain.TrainingSession
+import com.arnaucaballer.fitia.feature.training.domain.UpdateWorkoutSetTargetUseCase
 import com.arnaucaballer.fitia.feature.training.domain.Workout
 import com.arnaucaballer.fitia.feature.training.domain.WorkoutExercise
 import com.arnaucaballer.fitia.feature.training.domain.mergedWithHistory
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -42,6 +44,7 @@ class WorkoutDetailViewModel(
     private val saveExerciseUseCase: SaveExerciseUseCase,
     private val saveMuscleUseCase: SaveMuscleUseCase,
     private val saveWorkoutUseCase: SaveWorkoutUseCase,
+    private val updateWorkoutSetTargetUseCase: UpdateWorkoutSetTargetUseCase,
     private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
     private val startSessionFromWorkoutUseCase: StartSessionFromWorkoutUseCase,
 ) : ViewModel() {
@@ -81,6 +84,8 @@ class WorkoutDetailViewModel(
 
     private val _deleted = MutableSharedFlow<Unit>()
     val deleted: SharedFlow<Unit> = _deleted.asSharedFlow()
+
+    private var saveJob: Job = viewModelScope.launch { }
 
     init {
         refresh()
@@ -192,6 +197,9 @@ class WorkoutDetailViewModel(
         reps: Int?,
     ) {
         val current = _workout.value ?: return
+        val exercise = current.exercises.firstOrNull { it.sortOrder == sortOrder } ?: return
+        val existing = exercise.setTargets.firstOrNull { it.setIndex == setIndex } ?: return
+        if (existing.targetWeightKg == weightKg && existing.targetReps == reps) return
         val exercises = current.exercises.map { item ->
             if (item.sortOrder != sortOrder) {
                 item
@@ -207,7 +215,18 @@ class WorkoutDetailViewModel(
                 )
             }
         }
-        persist(current.copy(exercises = exercises))
+        val next = current.copy(exercises = exercises)
+        _workout.value = next
+        val workoutExerciseId = exercise.id
+        enqueueSave {
+            val updated = updateWorkoutSetTargetUseCase(
+                workoutExerciseId,
+                setIndex,
+                weightKg,
+                reps,
+            )
+            if (!updated) saveWorkoutUseCase(next)
+        }
     }
 
     fun removeExercise(sortOrder: Int) {
@@ -219,7 +238,9 @@ class WorkoutDetailViewModel(
     }
 
     fun startSession() {
+        val pending = saveJob
         viewModelScope.launch {
+            pending.join()
             val sessionId = startSessionFromWorkoutUseCase(workoutId)
             _sessionStarted.emit(sessionId)
         }
@@ -233,9 +254,15 @@ class WorkoutDetailViewModel(
     }
 
     private fun persist(workout: Workout) {
-        viewModelScope.launch {
-            saveWorkoutUseCase(workout)
-            refresh()
+        _workout.value = workout
+        enqueueSave { saveWorkoutUseCase(workout) }
+    }
+
+    private fun enqueueSave(block: suspend () -> Unit) {
+        val previous = saveJob
+        saveJob = viewModelScope.launch {
+            previous.join()
+            block()
         }
     }
 }
