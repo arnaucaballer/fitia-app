@@ -5,5 +5,6 @@ data class WorkoutExercise(
     val exerciseId: Long,
     val exerciseName: String,
     val sortOrder: Int,
+    val muscleGroup: String = "",
     val setTargets: List<SetTarget> = emptyList(),
 )

@@ -1,6 +1,7 @@
 package com.arnaucaballer.fitia.feature.training.data
 
 import com.arnaucaballer.fitia.core.database.ExerciseEntity
+import com.arnaucaballer.fitia.core.database.MuscleEntity
 import com.arnaucaballer.fitia.core.database.PlanEntity
 import com.arnaucaballer.fitia.core.database.SessionEntity
 import com.arnaucaballer.fitia.core.database.SessionExerciseEntity
@@ -10,6 +11,7 @@ import com.arnaucaballer.fitia.core.database.WorkoutEntity
 import com.arnaucaballer.fitia.core.database.WorkoutExerciseEntity
 import com.arnaucaballer.fitia.core.database.WorkoutSetTargetEntity
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.Muscle
 import com.arnaucaballer.fitia.feature.training.domain.SessionExercise
 import com.arnaucaballer.fitia.feature.training.domain.SessionSet
 import com.arnaucaballer.fitia.feature.training.domain.SessionStatus
@@ -19,17 +21,35 @@ import com.arnaucaballer.fitia.feature.training.domain.TrainingSession
 import com.arnaucaballer.fitia.feature.training.domain.Workout
 import com.arnaucaballer.fitia.feature.training.domain.WorkoutExercise
 
-internal fun ExerciseEntity.toDomain(): Exercise = Exercise(
+internal fun MuscleEntity.toDomain(): Muscle = Muscle(
     id = id,
     name = name,
-    muscleGroup = muscleGroup,
-    notes = notes,
     createdAtEpochMs = createdAtEpochMs,
 )
+
+internal fun Muscle.toEntity(): MuscleEntity = MuscleEntity(
+    id = id,
+    name = name.trim(),
+    createdAtEpochMs = createdAtEpochMs,
+)
+
+internal fun ExerciseEntity.toDomain(resolvedMuscleName: String = ""): Exercise {
+    val label = resolvedMuscleName.ifBlank { muscleGroup }
+    return Exercise(
+        id = id,
+        name = name,
+        muscleId = muscleId,
+        muscleName = label,
+        muscleGroup = muscleGroup,
+        notes = notes,
+        createdAtEpochMs = createdAtEpochMs,
+    )
+}
 
 internal fun Exercise.toEntity(): ExerciseEntity = ExerciseEntity(
     id = id,
     name = name.trim(),
+    muscleId = muscleId,
     muscleGroup = muscleGroup.trim(),
     notes = notes.trim(),
     createdAtEpochMs = createdAtEpochMs,

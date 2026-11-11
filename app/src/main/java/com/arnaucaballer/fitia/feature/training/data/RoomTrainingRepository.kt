@@ -7,28 +7,83 @@ import com.arnaucaballer.fitia.core.database.SessionSetEntity
 import com.arnaucaballer.fitia.core.database.SessionStatusValues
 import com.arnaucaballer.fitia.core.database.TrainingDao
 import com.arnaucaballer.fitia.core.database.WorkoutExerciseEntity
+import com.arnaucaballer.fitia.core.database.MuscleEntity
 import com.arnaucaballer.fitia.feature.training.domain.Exercise
+import com.arnaucaballer.fitia.feature.training.domain.Muscle
 import com.arnaucaballer.fitia.feature.training.domain.SessionStatus
 import com.arnaucaballer.fitia.feature.training.domain.TrainingPlan
 import com.arnaucaballer.fitia.feature.training.domain.TrainingRepository
 import com.arnaucaballer.fitia.feature.training.domain.TrainingSession
 import com.arnaucaballer.fitia.feature.training.domain.Workout
+import com.arnaucaballer.fitia.feature.training.domain.mergedWithHistory
+import com.arnaucaballer.fitia.feature.training.domain.PlanWeeklySlot
+import com.arnaucaballer.fitia.feature.training.domain.WorkoutSchedule
+import com.arnaucaballer.fitia.core.database.PlanWeeklyScheduleEntity
+import com.arnaucaballer.fitia.core.database.TrainingPreferencesEntity
+import com.arnaucaballer.fitia.core.database.WorkoutScheduleEntity
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class RoomTrainingRepository(
     private val dao: TrainingDao,
 ) : TrainingRepository {
 
-    override fun observeExercises(): Flow<List<Exercise>> =
-        dao.observeExercises().map { list -> list.map { it.toDomain() } }
+    override fun observeMuscles(): Flow<List<Muscle>> =
+        dao.observeMuscles().map { list -> list.map { it.toDomain() } }
 
-    override suspend fun getExercise(id: Long): Exercise? =
-        dao.getExercise(id)?.toDomain()
+    override suspend fun saveMuscle(muscle: Muscle): Long {
+        val now = System.currentTimeMillis()
+        val existing = dao.findMuscleByName(muscle.name.trim())
+        if (existing != null && muscle.id == 0L) return existing.id
+        val entity = muscle.toEntity().copy(
+            createdAtEpochMs = if (muscle.id == 0L) now else muscle.createdAtEpochMs,
+        )
+        return dao.upsertMuscle(entity)
+    }
+
+    override suspend fun findOrCreateMuscleByName(name: String): Long? {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return null
+        dao.findMuscleByName(trimmed)?.let { return it.id }
+        return dao.upsertMuscle(
+            MuscleEntity(
+                name = trimmed,
+                createdAtEpochMs = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    override fun observeExercises(): Flow<List<Exercise>> =
+        combine(dao.observeExercises(), dao.observeMuscles()) { exercises, muscles ->
+            val muscleNames = muscles.associate { it.id to it.name }
+            exercises.map { entity ->
+                val resolved = entity.muscleId?.let { muscleNames[it] }.orEmpty()
+                entity.toDomain(resolvedMuscleName = resolved)
+            }
+        }.distinctUntilChanged()
+
+    override suspend fun listPlanNames(): List<String> = dao.listPlanNames()
+
+    override suspend fun listGenericWorkoutNames(): List<String> = dao.listGenericWorkoutNames()
+
+    override suspend fun getExercise(id: Long): Exercise? {
+        val entity = dao.getExercise(id) ?: return null
+        val resolved = entity.muscleId?.let { dao.getMuscle(it)?.name }.orEmpty()
+        return entity.toDomain(resolvedMuscleName = resolved)
+    }
 
     override suspend fun saveExercise(exercise: Exercise): Long {
         val now = System.currentTimeMillis()
+        val muscleLabel = exercise.muscleId?.let { dao.getMuscle(it)?.name }.orEmpty()
+            .ifBlank { exercise.muscleGroup }
         val entity = exercise.toEntity().copy(
+            muscleGroup = muscleLabel.trim(),
             createdAtEpochMs = if (exercise.id == 0L) now else exercise.createdAtEpochMs,
         )
         return dao.upsertExercise(entity)
@@ -84,8 +139,29 @@ class RoomTrainingRepository(
         dao.deleteWorkout(entity)
     }
 
+    override suspend fun linkWorkoutToPlan(workoutId: Long, planId: Long) {
+        val workout = getWorkout(workoutId) ?: error("Workout not found")
+        val plan = getPlan(planId) ?: error("Plan not found")
+        if (plan.workouts.any { it.id == workoutId }) return
+        savePlan(plan.copy(workouts = plan.workouts + workout))
+    }
+
+    override suspend fun createPlanOwnedWorkout(planId: Long, name: String): Long {
+        val workoutId = saveWorkout(
+            Workout(
+                name = name.trim().ifBlank { "Entreno del plan" },
+                planId = planId,
+            ),
+        )
+        val plan = getPlan(planId) ?: return workoutId
+        val workout = getWorkout(workoutId) ?: return workoutId
+        savePlan(plan.copy(workouts = plan.workouts + workout))
+        return workoutId
+    }
+
     override suspend fun copyGenericWorkoutIntoPlan(workoutId: Long, planId: Long): Long {
         val source = getWorkout(workoutId) ?: error("Workout not found")
+        require(source.isGeneric) { "Only generic workouts can be copied into a plan" }
         val copyId = saveWorkout(
             source.copy(
                 id = 0,
@@ -106,7 +182,19 @@ class RoomTrainingRepository(
     }
 
     override fun observePlans(): Flow<List<TrainingPlan>> =
-        dao.observePlans().map { list -> list.map { it.toDomainSummary() } }
+        combine(
+            dao.observePlans(),
+            dao.observeAllPlanWorkouts(),
+            dao.observeWorkouts(),
+        ) { plans, links, workouts ->
+            val workoutById = workouts.associateBy { it.id }
+            val linksByPlan = links.groupBy { it.planId }
+            plans.map { plan ->
+                val planWorkouts = linksByPlan[plan.id].orEmpty()
+                    .mapNotNull { link -> workoutById[link.workoutId]?.toDomainSummary() }
+                plan.toDomainSummary().copy(workouts = planWorkouts)
+            }
+        }.distinctUntilChanged()
 
     override suspend fun getPlan(id: Long): TrainingPlan? {
         val plan = dao.getPlan(id) ?: return null
@@ -135,6 +223,10 @@ class RoomTrainingRepository(
 
     override suspend fun deletePlan(id: Long) {
         val entity = dao.getPlan(id) ?: return
+        val prefs = dao.observeTrainingPreferences().first()
+        if (prefs?.activePlanId == id) {
+            dao.upsertTrainingPreferences(TrainingPreferencesEntity(activePlanId = null))
+        }
         dao.deletePlan(entity)
     }
 
@@ -155,8 +247,21 @@ class RoomTrainingRepository(
         return session.toDomainSummary().copy(exercises = exercises)
     }
 
+    override suspend fun getLatestSessionForWorkout(workoutId: Long): TrainingSession? {
+        val session = dao.getLatestSessionForWorkout(
+            workoutId = workoutId,
+            status = SessionStatusValues.COMPLETED,
+        ) ?: return null
+        val exercises = dao.getSessionExercises(session.id).map { exercise ->
+            val sets = dao.getSessionSets(exercise.id).map { it.toDomain() }
+            exercise.toDomain(sets)
+        }
+        return session.toDomainSummary().copy(exercises = exercises)
+    }
+
     override suspend fun startSessionFromWorkout(workoutId: Long): Long {
         val workout = getWorkout(workoutId) ?: error("Workout not found")
+        val seeded = workout.mergedWithHistory(getLatestSessionForWorkout(workoutId))
         val now = System.currentTimeMillis()
         val sessionId = dao.upsertSession(
             SessionEntity(
@@ -167,7 +272,7 @@ class RoomTrainingRepository(
             ),
         )
         val exerciseIds = dao.insertSessionExercises(
-            workout.exercises.mapIndexed { index, item ->
+            seeded.exercises.mapIndexed { index, item ->
                 SessionExerciseEntity(
                     sessionId = sessionId,
                     exerciseId = item.exerciseId,
@@ -177,15 +282,9 @@ class RoomTrainingRepository(
             },
         )
         exerciseIds.forEachIndexed { index, sessionExerciseId ->
-            val targets = workout.exercises[index].setTargets
-            val sets = if (targets.isEmpty()) {
-                listOf(
-                    SessionSetEntity(
-                        sessionExerciseId = sessionExerciseId,
-                        setIndex = 0,
-                    ),
-                )
-            } else {
+            val targets = seeded.exercises[index].setTargets
+            if (targets.isEmpty()) return@forEachIndexed
+            dao.insertSessionSets(
                 targets.map { target ->
                     SessionSetEntity(
                         sessionExerciseId = sessionExerciseId,
@@ -193,9 +292,8 @@ class RoomTrainingRepository(
                         weightKg = target.targetWeightKg,
                         reps = target.targetReps,
                     )
-                }
-            }
-            dao.insertSessionSets(sets)
+                },
+            )
         }
         return sessionId
     }
@@ -231,6 +329,12 @@ class RoomTrainingRepository(
         )
     }
 
+    override suspend fun deleteSessionSet(setId: Long) {
+        val set = dao.getSessionSet(setId) ?: return
+        dao.deleteSessionSet(setId)
+        dao.shiftSessionSetIndexesDown(set.sessionExerciseId, set.setIndex)
+    }
+
     override suspend fun finishSession(sessionId: Long) {
         val session = dao.getSession(sessionId) ?: return
         dao.updateSession(
@@ -244,5 +348,146 @@ class RoomTrainingRepository(
     override suspend fun deleteSession(id: Long) {
         val entity = dao.getSession(id) ?: return
         dao.deleteSession(entity)
+    }
+
+    override suspend fun restoreSession(session: TrainingSession) {
+        dao.upsertSession(
+            SessionEntity(
+                id = session.id,
+                workoutId = session.workoutId,
+                name = session.name,
+                status = session.status.toStorage(),
+                startedAtEpochMs = session.startedAtEpochMs,
+                finishedAtEpochMs = session.finishedAtEpochMs,
+            ),
+        )
+        session.exercises.forEach { exercise ->
+            dao.upsertSessionExercise(
+                SessionExerciseEntity(
+                    id = exercise.id,
+                    sessionId = session.id,
+                    exerciseId = exercise.exerciseId,
+                    nameSnapshot = exercise.name,
+                    sortOrder = exercise.sortOrder,
+                ),
+            )
+            exercise.sets.forEach { set ->
+                dao.upsertSessionSet(
+                    SessionSetEntity(
+                        id = set.id,
+                        sessionExerciseId = exercise.id,
+                        setIndex = set.setIndex,
+                        weightKg = set.weightKg,
+                        reps = set.reps,
+                        isCompleted = set.isCompleted,
+                    ),
+                )
+            }
+        }
+    }
+
+    override suspend fun renameSession(id: Long, name: String) {
+        val entity = dao.getSession(id) ?: return
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        dao.updateSession(entity.copy(name = trimmed))
+    }
+
+    override fun observeWorkoutSchedules(): Flow<List<WorkoutSchedule>> =
+        combine(
+            dao.observeWorkoutSchedules(),
+            dao.observeWorkouts(),
+        ) { schedules, workouts ->
+            val names = workouts.associate { it.id to it.name }
+            schedules.mapNotNull { row ->
+                val name = names[row.workoutId] ?: return@mapNotNull null
+                WorkoutSchedule(
+                    dayEpochDay = row.dayEpochDay,
+                    workoutId = row.workoutId,
+                    workoutName = name,
+                )
+            }
+        }.distinctUntilChanged()
+
+    override suspend fun setWorkoutSchedule(dayEpochDay: Long, workoutId: Long) {
+        dao.getWorkout(workoutId) ?: error("Workout not found")
+        dao.upsertWorkoutSchedule(
+            WorkoutScheduleEntity(
+                dayEpochDay = dayEpochDay,
+                workoutId = workoutId,
+            ),
+        )
+    }
+
+    override suspend fun clearWorkoutSchedule(dayEpochDay: Long) {
+        dao.deleteWorkoutSchedule(dayEpochDay)
+    }
+
+    override fun observeActivePlanId(): Flow<Long?> =
+        dao.observeTrainingPreferences().map { it?.activePlanId }
+
+    override suspend fun setActivePlan(planId: Long?) {
+        if (planId != null) {
+            dao.getPlan(planId) ?: error("Plan not found")
+        }
+        dao.upsertTrainingPreferences(TrainingPreferencesEntity(activePlanId = planId))
+        if (planId != null) {
+            syncWeeklyPlanToCalendar(planId, weeksAhead = 12)
+        }
+    }
+
+    override fun observePlanWeeklySchedule(planId: Long): Flow<List<PlanWeeklySlot>> =
+        combine(
+            dao.observePlanWeeklySchedule(planId),
+            dao.observeWorkouts(),
+        ) { slots, workouts ->
+            val names = workouts.associate { it.id to it.name }
+            slots.map { row ->
+                PlanWeeklySlot(
+                    planId = row.planId,
+                    dayOfWeek = row.dayOfWeek,
+                    workoutId = row.workoutId,
+                    workoutName = row.workoutId?.let { names[it] },
+                )
+            }
+        }
+
+    override suspend fun setPlanWeeklySlot(planId: Long, dayOfWeek: Int, workoutId: Long?) {
+        require(dayOfWeek in DayOfWeek.MONDAY.value..DayOfWeek.SUNDAY.value)
+        if (workoutId != null) {
+            val plan = getPlan(planId) ?: error("Plan not found")
+            check(plan.workouts.any { it.id == workoutId }) { "Workout not in plan" }
+        }
+        dao.upsertPlanWeeklySlot(
+            PlanWeeklyScheduleEntity(
+                planId = planId,
+                dayOfWeek = dayOfWeek,
+                workoutId = workoutId,
+            ),
+        )
+    }
+
+    override suspend fun syncWeeklyPlanToCalendar(planId: Long, weeksAhead: Int) {
+        val slots = dao.observePlanWeeklySchedule(planId).first()
+        val byDay = slots.associate { it.dayOfWeek to it.workoutId }
+        if (byDay.isEmpty()) return
+        val start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val totalDays = weeksAhead * 7
+        val upserts = mutableListOf<WorkoutScheduleEntity>()
+        val clears = mutableListOf<Long>()
+        for (offset in 0 until totalDays) {
+            val date = start.plusDays(offset.toLong())
+            val dow = date.dayOfWeek.value
+            if (!byDay.containsKey(dow)) continue
+            val epoch = date.toEpochDay()
+            val workoutId = byDay[dow]
+            if (workoutId != null) {
+                upserts += WorkoutScheduleEntity(dayEpochDay = epoch, workoutId = workoutId)
+            } else {
+                clears += epoch
+            }
+        }
+        if (upserts.isNotEmpty()) dao.upsertWorkoutSchedules(upserts)
+        if (clears.isNotEmpty()) dao.deleteWorkoutSchedules(clears)
     }
 }
