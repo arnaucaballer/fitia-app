@@ -88,7 +88,7 @@ interface NutritionDao {
     @Query("SELECT * FROM meal_entries WHERE id = :id")
     suspend fun getEntry(id: Long): MealEntryEntity?
 
-    @Query("SELECT * FROM water_logs WHERE dayEpochDay = :day ORDER BY createdAtEpochMs ASC")
+    @Query("SELECT * FROM water_logs WHERE dayEpochDay = :day ORDER BY createdAtEpochMs DESC, id DESC")
     fun observeWaterLogs(day: Long): Flow<List<WaterLogEntity>>
 
     @Query("SELECT COALESCE(SUM(amountMl), 0) FROM water_logs WHERE dayEpochDay = :day")
@@ -97,8 +97,17 @@ interface NutritionDao {
     @Insert
     suspend fun insertWaterLog(entity: WaterLogEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertWaterLog(entity: WaterLogEntity): Long
+
     @Query("DELETE FROM water_logs WHERE id = :id")
     suspend fun deleteWaterLog(id: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM day_meal_state WHERE dayEpochDay = :day)")
+    suspend fun isDayMealsInitialized(day: Long): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertDayMealState(entity: DayMealStateEntity)
 
     @Query(
         """

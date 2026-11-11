@@ -7,8 +7,15 @@ class FitiaApplication : Application() {
     lateinit var container: AppContainer
         private set
 
+    var startupError: Throwable? = null
+        private set
+
     override fun onCreate() {
         super.onCreate()
-        container = AppContainer(this)
+        try {
+            container = AppContainer(this)
+        } catch (error: Throwable) {
+            startupError = error
+        }
     }
 }
