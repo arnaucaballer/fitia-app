@@ -62,8 +62,7 @@ import com.arnaucaballer.fitia.feature.nutrition.domain.WaterLog
 import com.arnaucaballer.fitia.feature.training.ui.NameInputDialog
 import java.time.LocalDate
 import kotlinx.coroutines.flow.collectLatest
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import com.arnaucaballer.fitia.design.mediumDateFormatter
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
@@ -93,8 +92,7 @@ fun NutritionHomeScreen(
         viewModel.selectDay(selectedDay)
         onSelectedDayConsumed()
     }
-    val dateLabel = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        .format(LocalDate.ofEpochDay(state.dayEpochDay))
+    val dateLabel = mediumDateFormatter.format(LocalDate.ofEpochDay(state.dayEpochDay))
     val totals = state.dayLog.totals
     val targets = state.targets
     val needsPlan = state.plans.isEmpty() || targets == null

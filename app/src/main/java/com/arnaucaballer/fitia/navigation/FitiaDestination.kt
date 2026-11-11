@@ -10,7 +10,7 @@ import com.arnaucaballer.fitia.R
 
 enum class FitiaDestination(
     val route: String,
-    @StringRes val labelRes: Int,
+    @param:StringRes val labelRes: Int,
     val icon: ImageVector,
 ) {
     Training(

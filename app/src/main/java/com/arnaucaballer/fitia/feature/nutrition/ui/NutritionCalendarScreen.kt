@@ -45,8 +45,7 @@ import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import com.arnaucaballer.fitia.design.fullDateFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -197,7 +196,7 @@ fun NutritionCalendarScreen(
                 items(recentDays, key = { it.toEpochDay() }) { date ->
                     FitiaCard(onClick = { onSelectDay(date.toEpochDay()) }) {
                         Text(
-                            text = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).format(date),
+                            text = fullDateFormatter.format(date),
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(

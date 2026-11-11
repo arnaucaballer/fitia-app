@@ -27,8 +27,7 @@ import com.arnaucaballer.fitia.design.FitiaSecondaryButton
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import com.arnaucaballer.fitia.design.fullDateFormatter
 
 @Composable
 fun TrainingStartScreen(
@@ -67,7 +66,7 @@ fun TrainingStartScreen(
         viewModel.needsWorkoutChoice.collect { showTrainChoice = true }
     }
 
-    val dateLabel = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).format(LocalDate.now())
+    val dateLabel = fullDateFormatter.format(LocalDate.now())
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),

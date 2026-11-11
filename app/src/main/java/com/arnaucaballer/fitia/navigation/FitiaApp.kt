@@ -1,11 +1,8 @@
 package com.arnaucaballer.fitia.navigation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,12 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,16 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -60,25 +46,14 @@ import com.arnaucaballer.fitia.feature.chat.ui.ChatScreen
 import com.arnaucaballer.fitia.feature.nutrition.ui.NutritionScreen
 import com.arnaucaballer.fitia.feature.settings.ui.SettingsScreen
 import com.arnaucaballer.fitia.feature.training.ui.TrainingScreen
-import kotlin.math.roundToInt
-
-private val pillSpring = spring<Float>(
-    dampingRatio = Spring.DampingRatioNoBouncy,
-    stiffness = Spring.StiffnessMedium,
-)
-
-private val tabSpring = spring<Float>(
-    dampingRatio = Spring.DampingRatioNoBouncy,
-    stiffness = Spring.StiffnessMediumLow,
-)
 
 @Composable
 fun FitiaApp() {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var selectedRoute by rememberSaveable { mutableStateOf(FitiaDestination.Chat.route) }
     val selectedTab = FitiaDestination.entries.first { it.route == selectedRoute }
-    val openedTabs = remember { mutableStateListOf(selectedTab) }
-    var slideForward by remember { mutableStateOf(true) }
+    var openedTabs by remember { mutableStateOf(listOf(selectedTab)) }
+    val openSettings = remember { { showSettings = true } }
     val density = LocalDensity.current
     val ime = WindowInsets.ime
     val keyboardOpen by remember(ime, density) {
@@ -96,8 +71,7 @@ fun FitiaApp() {
                     selectedTab = selectedTab,
                     onNavigate = { destination ->
                         if (destination != selectedTab) {
-                            slideForward = destination.ordinal > selectedTab.ordinal
-                            if (destination !in openedTabs) openedTabs.add(destination)
+                            if (destination !in openedTabs) openedTabs = openedTabs + destination
                             selectedRoute = destination.route
                         }
                     },
@@ -111,29 +85,19 @@ fun FitiaApp() {
                 .imePadding()
                 .fillMaxSize(),
         ) {
-            openedTabs.forEach { destination ->
-                key(destination.route) {
-                val selected = destination == selectedTab
-                TabLayer(
-                    selected = selected,
-                    slideForward = slideForward,
-                    startVisible = openedTabs.size == 1,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .zIndex(if (selected) 1f else 0f)
-                        .then(if (selected) Modifier else Modifier.clearAndSetSemantics {}),
-                ) {
-                    when (destination) {
-                        FitiaDestination.Training -> TrainingScreen(Modifier.fillMaxSize())
-                        FitiaDestination.Chat -> {
-                            ChatScreen(
-                                onOpenSettings = { showSettings = true },
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
-                        FitiaDestination.Nutrition -> NutritionScreen(Modifier.fillMaxSize())
-                    }
-                }
+            RetainedPages(
+                pages = openedTabs,
+                selected = selectedTab,
+                modifier = Modifier.fillMaxSize(),
+                pageKey = { it.route },
+            ) { destination ->
+                when (destination) {
+                    FitiaDestination.Training -> TrainingScreen(Modifier.fillMaxSize())
+                    FitiaDestination.Chat -> ChatScreen(
+                        onOpenSettings = openSettings,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    FitiaDestination.Nutrition -> NutritionScreen(Modifier.fillMaxSize())
                 }
             }
             AnimatedVisibility(
@@ -141,8 +105,8 @@ fun FitiaApp() {
                 modifier = Modifier
                     .fillMaxSize()
                     .zIndex(2f),
-                enter = fadeIn(tabSpring),
-                exit = fadeOut(tabSpring),
+                enter = EnterTransition.None,
+                exit = ExitTransition.None,
             ) {
                 Box(
                     modifier = Modifier
@@ -156,36 +120,6 @@ fun FitiaApp() {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun TabLayer(
-    selected: Boolean,
-    slideForward: Boolean,
-    startVisible: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    var target by remember { mutableFloatStateOf(if (startVisible) 1f else 0f) }
-    LaunchedEffect(selected) {
-        target = if (selected) 1f else 0f
-    }
-    val progress by animateFloatAsState(
-        targetValue = target,
-        animationSpec = tabSpring,
-        label = "tabProgress",
-    )
-    val slidePx = with(LocalDensity.current) { 28.dp.toPx() }
-    Box(
-        modifier = modifier.graphicsLayer {
-            val amount = progress.coerceIn(0f, 1f)
-            alpha = amount
-            val sign = if (slideForward) 1f else -1f
-            translationX = (1f - amount) * (if (selected) sign else -sign) * slidePx
-        },
-    ) {
-        content()
     }
 }
 
@@ -227,63 +161,38 @@ private fun FitiaNavBarItem(
     onClick: () -> Unit,
 ) {
     val label = stringResource(destination.labelRes)
-    val progress by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = pillSpring,
-        label = "navItem",
-    )
-    val amount = progress.coerceIn(0f, 1f)
-    val backgroundColor = lerp(
-        Color.Transparent,
-        MaterialTheme.colorScheme.primary,
-        amount,
-    )
-    val contentColor = lerp(
-        MaterialTheme.colorScheme.onSurfaceVariant,
-        MaterialTheme.colorScheme.onPrimary,
-        amount,
-    )
+    val background = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val content = if (selected) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     Row(
         modifier = Modifier
             .heightIn(min = 48.dp)
             .clip(FitiaPill)
-            .background(backgroundColor)
+            .background(background)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
-            .then(
-                if (selected) {
-                    Modifier
-                } else {
-                    Modifier.semantics { contentDescription = label }
-                },
-            ),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = destination.icon,
             contentDescription = if (selected) null else label,
-            tint = contentColor,
+            tint = content,
             modifier = Modifier.size(24.dp),
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = contentColor,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Clip,
-            modifier = Modifier
-                .padding(start = 8.dp * amount)
-                .clipToBounds()
-                .graphicsLayer { alpha = amount }
-                .layout { measurable, constraints ->
-                    val placeable = measurable.measure(constraints)
-                    val width = (placeable.width * amount).roundToInt()
-                    layout(width, placeable.height) {
-                        placeable.placeRelative(0, 0)
-                    }
-                },
-        )
+        if (selected) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = content,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
     }
 }

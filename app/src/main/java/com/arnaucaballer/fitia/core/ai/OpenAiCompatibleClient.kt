@@ -243,6 +243,5 @@ private fun ApiMessage.contentText(): String {
             part.jsonObject["text"]?.jsonPrimitive?.contentOrNull
         }.joinToString("\n")
         is JsonObject -> element["text"]?.jsonPrimitive?.contentOrNull.orEmpty()
-        else -> element.toString()
     }
 }

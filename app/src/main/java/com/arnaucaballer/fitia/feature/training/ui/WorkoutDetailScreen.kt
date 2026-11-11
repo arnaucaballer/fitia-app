@@ -68,8 +68,7 @@ import kotlin.math.roundToInt
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import com.arnaucaballer.fitia.feature.training.domain.WorkoutExercise
-import java.text.DateFormat
-import java.util.Date
+import com.arnaucaballer.fitia.design.formatDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -192,10 +191,7 @@ fun WorkoutDetailScreen(
                             Text(
                                 text = stringResource(
                                     R.string.training_last_session_values,
-                                    DateFormat.getDateTimeInstance(
-                                        DateFormat.MEDIUM,
-                                        DateFormat.SHORT,
-                                    ).format(Date(last)),
+                                    formatDateTime(last),
                                 ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -246,10 +242,7 @@ fun WorkoutDetailScreen(
                     FitiaCard(onClick = { onOpenSession(session.id) }) {
                         Text(session.name, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            text = DateFormat.getDateTimeInstance(
-                                DateFormat.MEDIUM,
-                                DateFormat.SHORT,
-                            ).format(Date(session.startedAtEpochMs)),
+                            text = formatDateTime(session.startedAtEpochMs),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium,
                         )

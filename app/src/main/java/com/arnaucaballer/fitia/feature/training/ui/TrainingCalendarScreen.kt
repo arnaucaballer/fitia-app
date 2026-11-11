@@ -50,8 +50,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import com.arnaucaballer.fitia.design.fullDateFormatter
+import com.arnaucaballer.fitia.design.shortTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -116,7 +116,7 @@ fun TrainingCalendarScreen(
     val daySessions = sessionsByDay[selectedDay].orEmpty()
         .sortedByDescending { it.startedAtEpochMs }
     val daySchedule = schedulesByDay[selectedDay]
-    val timeFormat = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+    val timeFormat = shortTimeFormatter
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -234,8 +234,7 @@ fun TrainingCalendarScreen(
 
         item(key = "day-title") {
             Text(
-                text = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
-                    .format(LocalDate.ofEpochDay(selectedDay)),
+                text = fullDateFormatter.format(LocalDate.ofEpochDay(selectedDay)),
                 style = MaterialTheme.typography.titleLarge,
             )
         }

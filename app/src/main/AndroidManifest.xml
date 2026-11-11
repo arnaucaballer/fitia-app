@@ -17,7 +17,6 @@
         android:logo="@drawable/ic_launcher_brand"
         android:supportsRtl="true"
         android:theme="@style/Theme.Fitia"
-        android:largeHeap="true"
         android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"

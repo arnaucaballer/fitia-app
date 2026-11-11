@@ -6,7 +6,7 @@ App Android de entreno y alimentación con asistente de IA.
 
 - JDK 17
 - Android SDK (compileSdk 35)
-- Dispositivo o emulador Android 8.0+ (API 26)
+- Teléfono Android 8.0 o superior (API 26)
 
 ## Abrir el proyecto
 
@@ -19,31 +19,7 @@ printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
 ./gradlew :app:assembleDebug
 ```
 
-El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.35.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados).
-
-## Probar aquí (emulador en WSL)
-
-Una sola vez (pide contraseña de sudo: grupo `kvm` + libs):
-
-```bash
-./scripts/setup-wsl-emulator.sh
-```
-
-Después, cada vez:
-
-```bash
-./scripts/run-fitia.sh
-```
-
-Compila el APK debug, abre el emulador `Fitia_API34` en una ventana WSLg, lo instala y lanza Fitia.
-
-Para parar el emulador:
-
-```bash
-./scripts/stop-emulator.sh
-```
-
-**Teléfono:** con depuración USB (o `adb connect IP:PUERTO`), el mismo `./scripts/run-fitia.sh` usa el dispositivo si aparece en `adb devices`.
+El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.36.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados).
 
 ## Clave de IA
 

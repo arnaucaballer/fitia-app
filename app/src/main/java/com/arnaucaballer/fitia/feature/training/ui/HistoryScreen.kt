@@ -30,8 +30,7 @@ import com.arnaucaballer.fitia.R
 import com.arnaucaballer.fitia.di.fitiaContainer
 import com.arnaucaballer.fitia.di.fitiaViewModelFactory
 import com.arnaucaballer.fitia.feature.training.domain.SessionStatus
-import java.text.DateFormat
-import java.util.Date
+import com.arnaucaballer.fitia.design.formatDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +46,6 @@ fun HistoryScreen(
         },
     )
     val sessions by viewModel.sessions.collectAsStateWithLifecycle()
-    val dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
 
     Scaffold(
         modifier = modifier,
@@ -89,7 +87,7 @@ fun HistoryScreen(
                 ) {
                     Text(session.name, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        text = dateFormat.format(Date(session.startedAtEpochMs)),
+                        text = formatDateTime(session.startedAtEpochMs),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

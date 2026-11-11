@@ -3,10 +3,10 @@ package com.arnaucaballer.fitia.feature.nutrition.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.arnaucaballer.fitia.navigation.FitiaNavHost
 
 private const val SelectedDayKey = "selected_day"
 private const val NoDay = Long.MIN_VALUE
@@ -15,7 +15,7 @@ private const val NoDay = Long.MIN_VALUE
 fun NutritionScreen(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
 
-    NavHost(
+    FitiaNavHost(
         navController = navController,
         startDestination = NutritionRoutes.Home,
         modifier = modifier,
