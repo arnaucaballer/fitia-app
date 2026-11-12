@@ -19,13 +19,17 @@ printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
 ./gradlew :app:assembleDebug
 ```
 
-El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.36.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados).
+El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.54.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados). Este APK usa el identificador `app.fitia`: no sustituye a una instalación anterior con otro identificador.
 
 ## Clave de IA
 
 En la app: **Chat → icono de Ajustes → Clave de API**.
 Proveedor por defecto: OpenRouter. Modelo inicial: `google/gemini-2.5-flash`.
-La clave se guarda cifrada en el teléfono. No va al repositorio.
+La clave se guarda cifrada en el teléfono. No va al repositorio, ni a copias de seguridad, ni a las peticiones como dato identificable.
+
+## Publicar
+
+La firma de release lee `keystore.properties` en la raíz (no se sube a git). Copia `keystore.properties.example`, crea el almacén fuera del repositorio y rellena la ruta y las contraseñas en local. Sin ese archivo, `assembleRelease` genera un APK sin firmar.
 
 ## Estructura
 

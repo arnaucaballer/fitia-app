@@ -20,7 +20,7 @@ App Android de entreno y alimentación con un chat que consulta y modifica los m
 ## Arquitectura
 
 ```
-app/src/main/java/com/arnaucaballer/fitia/
+app/src/main/java/app/fitia/
   navigation/       navegación y destinos
   design/           tema, tipografía, color
   core/database/    Room, entidades, DAOs
@@ -65,8 +65,8 @@ Reglas:
 
 ## Build y APK
 
-- `applicationId`: `com.arnaucaballer.fitia`
+- `applicationId`: `app.fitia`
 - minSdk 26, compileSdk 35, JDK 17.
 - APK de entrega: `apk/fitia-<versionName>.apk`. `assembleDebug` lo copia ahí. Al cambiar `versionName` el archivo nuevo convive con los anteriores.
-- Cada cambio que afecte a lo instalable termina con versión nueva y APK generado (`JAVA_HOME=/home/arnau/.local/jdk/jdk-17.0.20.1+1 ./gradlew :app:assembleDebug`).
+- Cada cambio que afecte a lo instalable termina con versión nueva y APK generado (`JAVA_HOME=/ruta/a/jdk-17 ./gradlew :app:assembleDebug`).
 - No subir APKs ni carpetas `build/` al repo.

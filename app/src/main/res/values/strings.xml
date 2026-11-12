@@ -38,6 +38,11 @@
     <string name="training_log_continue">Seguir sesión en curso</string>
     <string name="training_log_blank">Sesión libre</string>
     <string name="training_log_from_workout">Empezar desde un entreno</string>
+    <string name="training_log_library">Biblioteca</string>
+    <string name="training_log_plan_fallback">Plan</string>
+    <string name="training_log_section_count">%1$d entrenos</string>
+    <string name="training_log_expand">Mostrar entrenos</string>
+    <string name="training_log_collapse">Ocultar entrenos</string>
     <string name="training_log_empty_workouts">Crea un entreno en la pestaña Entrenos para registrar sus datos.</string>
     <string name="training_calendar_sessions">Sesiones del día</string>
     <string name="training_calendar_empty_day">Este día no tiene sesiones.</string>
@@ -48,6 +53,9 @@
     <string name="training_schedule_assign_day">Asignar entreno</string>
     <string name="training_schedule_change">Cambiar</string>
     <string name="training_schedule_clear">Quitar</string>
+    <string name="training_calendar_clear">Vaciar calendario</string>
+    <string name="training_calendar_clear_title">Vaciar calendario</string>
+    <string name="training_calendar_clear_body">Se quitan los entrenos asignados a cada día y la semana del plan queda en descanso. Las sesiones que ya registraste se quedan.</string>
     <string name="training_schedule_pick">Elige el entreno para este día</string>
     <string name="training_schedule_assign">Asignar</string>
     <string name="training_schedule_empty_workouts">Crea un entreno antes en la pestaña Entrenos.</string>
@@ -109,6 +117,11 @@
     <string name="training_muscle_primary">Principal</string>
     <string name="training_muscle_primary_hint">El primero es el principal: ahí se agrupa el ejercicio.</string>
     <string name="training_select_muscle">Toca el cuerpo para elegir</string>
+    <string name="training_suggest_muscles">Buscar músculos con IA</string>
+    <string name="training_suggest_muscles_loading">Buscando músculos…</string>
+    <string name="training_suggest_muscles_hint">Puedes tocar un músculo para cambiarlo, o elegirlos a mano.</string>
+    <string name="training_suggest_muscles_empty">No he podido identificar músculos. Elígelos en el cuerpo.</string>
+    <string name="training_change_muscle">Cambiar músculo</string>
     <string name="training_muscle_map_title">Elegir músculo</string>
     <string name="training_body_front">Frente</string>
     <string name="training_body_back">Espalda</string>
@@ -126,6 +139,7 @@
     <string name="training_plans_title">Planes</string>
     <string name="training_history_title">Historial</string>
     <string name="training_session_title">Sesión</string>
+    <string name="training_blank_session_empty">Añade cualquier ejercicio que ya tengas registrado.</string>
     <string name="training_workout_detail">Entrenamiento</string>
     <string name="training_plan_detail">Plan</string>
     <string name="training_create_exercise">Nuevo ejercicio</string>
@@ -181,13 +195,27 @@
     <string name="action_rename">Renombrar</string>
     <string name="action_undo">Deshacer</string>
     <string name="deleted_snackbar">Eliminado</string>
-    <string name="long_press_hint">Mantén pulsado un plan, entreno, comida o registro para editarlo o eliminarlo.</string>
     <string name="long_press_action">Editar o eliminar</string>
     <string name="action_see_all">Ver todo</string>
     <string name="chat_title">Chat</string>
-    <string name="chat_placeholder">Cuéntame qué necesitas. Primero te preguntaré cómo lo quieres; si prefieres, dime «créalo tú» y lo haré.</string>
+    <string name="chat_placeholder">Hablo de entreno, alimentación y de cómo usar Fitia. Pídeme que cree o cambie algo y lo haré al momento.</string>
     <string name="chat_input_hint">Escribe un mensaje…</string>
     <string name="chat_send">Enviar</string>
+    <string name="chat_new">Nuevo chat</string>
+    <string name="chat_history">Historial</string>
+    <string name="chat_history_empty">Todavía no hay chats guardados.</string>
+    <string name="chat_history_actions">Fijar, renombrar o eliminar</string>
+    <string name="chat_pin">Fijar</string>
+    <string name="chat_unpin">Quitar de fijados</string>
+    <string name="chat_pinned">Fijado</string>
+    <string name="chat_pinned_section">Fijados</string>
+    <string name="chat_recent_section">Recientes</string>
+    <string name="chat_rename">Renombrar chat</string>
+    <string name="chat_name">Nombre</string>
+    <string name="chat_delete_title">Eliminar chat</string>
+    <string name="chat_delete_body">Este chat se quita del historial. Puedes deshacerlo justo después.</string>
+    <string name="chat_time_today">Hoy, %1$s</string>
+    <string name="chat_time_yesterday">Ayer, %1$s</string>
     <string name="nutrition_title">Alimentación</string>
     <string name="nutrition_placeholder">Aquí irán tu perfil, macros y el diario del día.</string>
     <string name="nutrition_home_subtitle">Empieza por un plan. Luego registra comida y agua del día.</string>
@@ -276,12 +304,13 @@
     <string name="settings_model_custom">Personalizado</string>
     <string name="settings_model_id">ID del modelo</string>
     <string name="settings_base_url">Base URL (opcional)</string>
-    <string name="settings_api_key_hint">La clave se guarda cifrada en el teléfono. No se sube a GitHub.</string>
+    <string name="settings_api_key_hint">La clave se guarda cifrada solo en este teléfono. No sale en copias de seguridad ni en el código.</string>
     <string name="chat_configure_api">Configura tu clave de API en Ajustes</string>
     <string name="chat_missing_api_key">Falta la clave de API. Ábrela en Ajustes → Clave de API.</string>
     <string name="chat_attach_food_photo">Foto de comida</string>
     <string name="chat_confirm_food">Confirmar alimento</string>
     <string name="nutrition_meal_name">Comida</string>
+    <string name="nutrition_food_photo_meal">¿En qué comida lo guardo?</string>
 </resources>
 
 

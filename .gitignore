@@ -17,6 +17,7 @@ app/build/
 .kotlin/
 *.keystore
 *.jks
+keystore.properties
 .env
 .env.*
 !.env.example

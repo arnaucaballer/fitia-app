@@ -1,0 +1,270 @@
+package app.fitia.core.database
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface TrainingDao {
+    @Query("SELECT * FROM muscles ORDER BY name COLLATE NOCASE ASC")
+    fun observeMuscles(): Flow<List<MuscleEntity>>
+
+    @Query("SELECT * FROM muscles WHERE id = :id")
+    suspend fun getMuscle(id: Long): MuscleEntity?
+
+    @Query("SELECT * FROM muscles WHERE name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun findMuscleByName(name: String): MuscleEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMuscle(entity: MuscleEntity): Long
+
+    @Query("SELECT * FROM exercises ORDER BY name COLLATE NOCASE ASC")
+    fun observeExercises(): Flow<List<ExerciseEntity>>
+
+    @Query("SELECT * FROM exercises WHERE id = :id")
+    suspend fun getExercise(id: Long): ExerciseEntity?
+
+    @Query("SELECT * FROM exercises WHERE id IN (:ids)")
+    suspend fun getExercisesByIds(ids: List<Long>): List<ExerciseEntity>
+
+    @Query("SELECT * FROM exercise_muscles ORDER BY exerciseId ASC, sortOrder ASC")
+    fun observeExerciseMuscles(): Flow<List<ExerciseMuscleEntity>>
+
+    @Query("SELECT * FROM exercise_muscles WHERE exerciseId = :exerciseId ORDER BY sortOrder ASC")
+    suspend fun getExerciseMuscles(exerciseId: Long): List<ExerciseMuscleEntity>
+
+    @Query("DELETE FROM exercise_muscles WHERE exerciseId = :exerciseId")
+    suspend fun clearExerciseMuscles(exerciseId: Long)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertExerciseMuscles(entities: List<ExerciseMuscleEntity>)
+
+    @Insert
+    suspend fun insertExercise(entity: ExerciseEntity): Long
+
+    @Update
+    suspend fun updateExercise(entity: ExerciseEntity): Int
+
+    @Delete
+    suspend fun deleteExercise(entity: ExerciseEntity)
+
+    @Query("SELECT * FROM workouts ORDER BY name COLLATE NOCASE ASC")
+    fun observeWorkouts(): Flow<List<WorkoutEntity>>
+
+    @Query("SELECT * FROM workouts WHERE planId IS NULL ORDER BY name COLLATE NOCASE ASC")
+    fun observeGenericWorkouts(): Flow<List<WorkoutEntity>>
+
+    @Query("SELECT * FROM workouts WHERE planId = :planId ORDER BY name COLLATE NOCASE ASC")
+    fun observePlanOwnedWorkouts(planId: Long): Flow<List<WorkoutEntity>>
+
+    @Query("SELECT * FROM workouts WHERE id = :id")
+    suspend fun getWorkout(id: Long): WorkoutEntity?
+
+    @Query("SELECT * FROM workouts WHERE id IN (:ids)")
+    suspend fun getWorkoutsByIds(ids: List<Long>): List<WorkoutEntity>
+
+    @Insert
+    suspend fun insertWorkout(entity: WorkoutEntity): Long
+
+    @Update
+    suspend fun updateWorkout(entity: WorkoutEntity): Int
+
+    @Delete
+    suspend fun deleteWorkout(entity: WorkoutEntity)
+
+    @Query("SELECT * FROM workout_exercises WHERE workoutId = :workoutId ORDER BY sortOrder ASC")
+    suspend fun getWorkoutExercises(workoutId: Long): List<WorkoutExerciseEntity>
+
+    @Query("SELECT * FROM workout_exercises WHERE workoutId IN (:workoutIds) ORDER BY sortOrder ASC")
+    suspend fun getWorkoutExercisesFor(workoutIds: List<Long>): List<WorkoutExerciseEntity>
+
+    @Query("DELETE FROM workout_exercises WHERE workoutId = :workoutId")
+    suspend fun clearWorkoutExercises(workoutId: Long)
+
+    @Insert
+    suspend fun insertWorkoutExercises(entities: List<WorkoutExerciseEntity>): List<Long>
+
+    @Query("SELECT * FROM workout_set_targets WHERE workoutExerciseId = :workoutExerciseId ORDER BY setIndex ASC")
+    suspend fun getSetTargets(workoutExerciseId: Long): List<WorkoutSetTargetEntity>
+
+    @Query("SELECT * FROM workout_set_targets WHERE workoutExerciseId IN (:ids) ORDER BY setIndex ASC")
+    suspend fun getSetTargetsFor(ids: List<Long>): List<WorkoutSetTargetEntity>
+
+    @Query(
+        """
+        UPDATE workout_set_targets
+        SET targetWeightKg = :weightKg, targetReps = :reps
+        WHERE workoutExerciseId = :workoutExerciseId AND setIndex = :setIndex
+        """,
+    )
+    suspend fun updateSetTarget(
+        workoutExerciseId: Long,
+        setIndex: Int,
+        weightKg: Double?,
+        reps: Int?,
+    ): Int
+
+    @Insert
+    suspend fun insertSetTargets(entities: List<WorkoutSetTargetEntity>)
+
+    @Query("SELECT name FROM plans ORDER BY name COLLATE NOCASE ASC")
+    suspend fun listPlanNames(): List<String>
+
+    @Query("SELECT name FROM workouts WHERE planId IS NULL ORDER BY name COLLATE NOCASE ASC")
+    suspend fun listGenericWorkoutNames(): List<String>
+
+    @Query("SELECT * FROM plans ORDER BY name COLLATE NOCASE ASC")
+    fun observePlans(): Flow<List<PlanEntity>>
+
+    @Query("SELECT * FROM plans WHERE id = :id")
+    suspend fun getPlan(id: Long): PlanEntity?
+
+    @Insert
+    suspend fun insertPlan(entity: PlanEntity): Long
+
+    @Update
+    suspend fun updatePlan(entity: PlanEntity): Int
+
+    @Delete
+    suspend fun deletePlan(entity: PlanEntity)
+
+    @Query("SELECT * FROM plan_workouts WHERE planId = :planId ORDER BY sortOrder ASC")
+    suspend fun getPlanWorkouts(planId: Long): List<PlanWorkoutEntity>
+
+    @Query("SELECT * FROM plan_workouts ORDER BY planId ASC, sortOrder ASC")
+    fun observeAllPlanWorkouts(): Flow<List<PlanWorkoutEntity>>
+
+    @Query("DELETE FROM plan_workouts WHERE planId = :planId")
+    suspend fun clearPlanWorkouts(planId: Long)
+
+    @Insert
+    suspend fun insertPlanWorkouts(entities: List<PlanWorkoutEntity>)
+
+    @Query("SELECT * FROM sessions ORDER BY startedAtEpochMs DESC")
+    fun observeSessions(): Flow<List<SessionEntity>>
+
+    @Query("SELECT * FROM sessions WHERE status = :status ORDER BY startedAtEpochMs DESC LIMIT 1")
+    fun observeLatestSessionByStatus(status: String): Flow<SessionEntity?>
+
+    @Query("SELECT * FROM sessions WHERE id = :id")
+    suspend fun getSession(id: Long): SessionEntity?
+
+    @Query(
+        """
+        SELECT * FROM sessions
+        WHERE workoutId = :workoutId AND status = :status
+        ORDER BY startedAtEpochMs DESC
+        LIMIT 1
+        """,
+    )
+    suspend fun getLatestSessionForWorkout(workoutId: Long, status: String): SessionEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSession(entity: SessionEntity): Long
+
+    @Update
+    suspend fun updateSession(entity: SessionEntity)
+
+    @Delete
+    suspend fun deleteSession(entity: SessionEntity)
+
+    @Query("SELECT * FROM session_exercises WHERE sessionId = :sessionId ORDER BY sortOrder ASC")
+    suspend fun getSessionExercises(sessionId: Long): List<SessionExerciseEntity>
+
+    @Insert
+    suspend fun insertSessionExercises(entities: List<SessionExerciseEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSessionExercise(entity: SessionExerciseEntity): Long
+
+    @Query("SELECT * FROM session_sets WHERE sessionExerciseId = :sessionExerciseId ORDER BY setIndex ASC")
+    suspend fun getSessionSets(sessionExerciseId: Long): List<SessionSetEntity>
+
+    @Query("SELECT * FROM session_sets WHERE sessionExerciseId IN (:ids) ORDER BY setIndex ASC")
+    suspend fun getSessionSetsFor(ids: List<Long>): List<SessionSetEntity>
+
+    @Query("SELECT * FROM session_sets WHERE id = :setId")
+    suspend fun getSessionSet(setId: Long): SessionSetEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSessionSet(entity: SessionSetEntity): Long
+
+    @Insert
+    suspend fun insertSessionSets(entities: List<SessionSetEntity>)
+
+    @Query("DELETE FROM session_sets WHERE id = :setId")
+    suspend fun deleteSessionSet(setId: Long)
+
+    @Query(
+        """
+        UPDATE session_sets
+        SET setIndex = setIndex - 1
+        WHERE sessionExerciseId = :sessionExerciseId AND setIndex > :removedIndex
+        """,
+    )
+    suspend fun shiftSessionSetIndexesDown(sessionExerciseId: Long, removedIndex: Int)
+
+    @Transaction
+    suspend fun replaceWorkoutStructure(
+        workoutId: Long,
+        exercises: List<WorkoutExerciseEntity>,
+        targetsByExerciseIndex: List<List<WorkoutSetTargetEntity>>,
+    ) {
+        clearWorkoutExercises(workoutId)
+        val ids = insertWorkoutExercises(exercises)
+        ids.forEachIndexed { index, workoutExerciseId ->
+            val targets = targetsByExerciseIndex.getOrNull(index).orEmpty().map {
+                it.copy(id = 0, workoutExerciseId = workoutExerciseId)
+            }
+            if (targets.isNotEmpty()) {
+                insertSetTargets(targets)
+            }
+        }
+    }
+
+    @Transaction
+    suspend fun replacePlanWorkouts(planId: Long, workouts: List<PlanWorkoutEntity>) {
+        clearPlanWorkouts(planId)
+        if (workouts.isNotEmpty()) {
+            insertPlanWorkouts(workouts)
+        }
+    }
+
+    @Query("SELECT * FROM workout_schedules")
+    fun observeWorkoutSchedules(): Flow<List<WorkoutScheduleEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertWorkoutSchedule(entity: WorkoutScheduleEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertWorkoutSchedules(entities: List<WorkoutScheduleEntity>)
+
+    @Query("DELETE FROM workout_schedules WHERE dayEpochDay = :dayEpochDay")
+    suspend fun deleteWorkoutSchedule(dayEpochDay: Long)
+
+    @Query("DELETE FROM workout_schedules WHERE dayEpochDay IN (:days)")
+    suspend fun deleteWorkoutSchedules(days: List<Long>)
+
+    @Query("DELETE FROM workout_schedules")
+    suspend fun deleteAllWorkoutSchedules()
+
+    @Query("DELETE FROM plan_weekly_schedule WHERE planId = :planId")
+    suspend fun deletePlanWeeklySchedule(planId: Long)
+
+    @Query("SELECT * FROM training_preferences WHERE id = 1")
+    fun observeTrainingPreferences(): Flow<TrainingPreferencesEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertTrainingPreferences(entity: TrainingPreferencesEntity)
+
+    @Query("SELECT * FROM plan_weekly_schedule WHERE planId = :planId ORDER BY dayOfWeek ASC")
+    fun observePlanWeeklySchedule(planId: Long): Flow<List<PlanWeeklyScheduleEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPlanWeeklySlot(entity: PlanWeeklyScheduleEntity)
+}

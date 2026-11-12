@@ -5,17 +5,42 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = mutableMapOf<String, String>()
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystorePropertiesFile.readLines().forEach { line ->
+        val trimmed = line.trim()
+        if (trimmed.isEmpty() || trimmed.startsWith("#")) return@forEach
+        val separator = trimmed.indexOf('=')
+        if (separator <= 0) return@forEach
+        keystoreProperties[trimmed.substring(0, separator).trim()] =
+            trimmed.substring(separator + 1).trim()
+    }
+}
+
 android {
-    namespace = "com.arnaucaballer.fitia"
+    namespace = "app.fitia"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.arnaucaballer.fitia"
+        applicationId = "app.fitia"
         minSdk = 26
         targetSdk = 35
-        versionCode = 36
-        versionName = "0.1.36"
+        versionCode = 54
+        versionName = "0.1.54"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getValue("storeFile"))
+                storePassword = keystoreProperties.getValue("storePassword")
+                keyAlias = keystoreProperties.getValue("keyAlias")
+                keyPassword = keystoreProperties.getValue("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -29,6 +54,9 @@ android {
             )
         }
         release {
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
