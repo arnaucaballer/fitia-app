@@ -1,12 +1,16 @@
 package app.fitia.feature.nutrition.ui
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,13 +35,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -66,6 +73,15 @@ import kotlinx.coroutines.flow.collectLatest
 import app.fitia.design.mediumDateFormatter
 import kotlinx.coroutines.flow.StateFlow
 import app.fitia.design.fitiaPress
+import app.fitia.navigation.RetainedPages
+
+private enum class NutritionTab(
+    @param:StringRes val label: Int,
+    @param:StringRes val hint: Int,
+) {
+    Plan(R.string.nutrition_tab_plan, R.string.nutrition_tab_hint_plan),
+    Log(R.string.nutrition_tab_log, R.string.nutrition_tab_hint_log),
+}
 
 @Composable
 fun NutritionHomeScreen(
@@ -120,271 +136,67 @@ fun NutritionHomeScreen(
         }
     }
 
+    var selectedTab by rememberSaveable { mutableIntStateOf(NutritionTab.Log.ordinal) }
+    var openedTabs by remember { mutableStateOf(listOf(NutritionTab.Log)) }
+    val tab = NutritionTab.entries[selectedTab]
+
+    fun selectTab(next: NutritionTab) {
+        selectedTab = next.ordinal
+        if (next !in openedTabs) openedTabs = openedTabs + next
+    }
+
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbar) },
     ) { _ ->
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = FitiaSpace.page(),
-        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
-    ) {
-        item {
-            Text(
-                text = stringResource(R.string.nutrition_title),
-                style = MaterialTheme.typography.displaySmall,
-            )
-            Text(
-                text = stringResource(R.string.nutrition_home_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = FitiaSpace.related),
-            )
-        }
-
-        if (needsPlan) {
-            item {
-                FitiaCard {
-                    Text(stringResource(R.string.nutrition_need_plan_title), style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        text = stringResource(R.string.nutrition_need_plan_body),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = FitiaSpace.related, bottom = FitiaSpace.stack),
+        Column(modifier = Modifier.fillMaxSize()) {
+            NutritionTabHeader(tab = tab, onSelect = ::selectTab)
+            RetainedPages(
+                pages = openedTabs,
+                selected = tab,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clipToBounds(),
+                pageKey = { it.name },
+            ) { page ->
+                when (page) {
+                    NutritionTab.Plan -> NutritionPlanPage(
+                        plans = state.plans,
+                        needsPlan = needsPlan,
+                        longPressLabel = longPressLabel,
+                        onOpenPlans = onOpenPlans,
+                        onCreatePlanWizard = onCreatePlanWizard,
+                        onOpenProfile = onOpenProfile,
+                        onOpenTargets = onOpenTargets,
+                        onPlanLongClick = { pending = NutritionItemAction.PlanItem(it) },
                     )
-                    FitiaPrimaryButton(
-                        text = stringResource(R.string.nutrition_create_plan_ai),
-                        onClick = onCreatePlanWizard,
-                    )
-                }
-            }
-        } else {
-            item {
-                FitiaSectionHeader(
-                    title = stringResource(R.string.nutrition_section_plan),
-                    actionLabel = stringResource(R.string.see_all),
-                    onAction = onOpenPlans,
-                )
-            }
-            items(state.plans.take(3), key = { it.id }) { plan ->
-                FitiaCard(
-                    onClick = onOpenPlans,
-                    onLongClick = { pending = NutritionItemAction.PlanItem(plan) },
-                    onLongClickLabel = longPressLabel,
-                ) {
-                    Text(plan.name, style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = stringResource(
-                            R.string.nutrition_plan_macros,
-                            plan.calories,
-                            plan.proteinGrams.toInt(),
-                            plan.carbsGrams.toInt(),
-                            plan.fatGrams.toInt(),
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = FitiaSpace.related),
+                    NutritionTab.Log -> NutritionLogPage(
+                        state = state,
+                        dateLabel = dateLabel,
+                        needsPlan = needsPlan,
+                        longPressLabel = longPressLabel,
+                        onShiftDay = viewModel::shiftDay,
+                        onOpenCalendar = onOpenCalendar,
+                        onOpenPlanTab = { selectTab(NutritionTab.Plan) },
+                        onFoodPhoto = { onFoodPhoto(state.dayEpochDay) },
+                        onOpenFoods = onOpenFoods,
+                        onAddEntry = onAddEntry,
+                        onEditEntry = { editEntry = it },
+                        onDeleteEntry = viewModel::deleteEntry,
+                        onMealLongClick = { pending = NutritionItemAction.MealItem(it) },
+                        onEntryLongClick = { pending = NutritionItemAction.EntryItem(it) },
+                        onWaterLongClick = { pending = NutritionItemAction.WaterItem(it) },
+                        onAddWater = viewModel::addWater,
+                        onAddMeal = { showAddMeal = true },
                     )
                 }
             }
-            item {
-                FitiaSecondaryButton(
-                    text = stringResource(R.string.nutrition_create_plan_ai),
-                    onClick = onCreatePlanWizard,
-                )
-            }
-        }
-
-        item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                IconButton(modifier = Modifier.fitiaPress(), onClick = { viewModel.shiftDay(-1) }) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = stringResource(R.string.nutrition_prev_day),
-                    )
-                }
-                Text(
-                    text = dateLabel,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.clickable(onClick = onOpenCalendar),
-                )
-                IconButton(modifier = Modifier.fitiaPress(), onClick = { viewModel.shiftDay(1) }) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = stringResource(R.string.nutrition_next_day),
-                    )
-                }
-            }
-        }
-
-        item {
-            FitiaSecondaryButton(
-                text = stringResource(R.string.nutrition_calendar),
-                onClick = onOpenCalendar,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        item {
-            FitiaCard {
-                Text(stringResource(R.string.nutrition_today_progress), style = MaterialTheme.typography.titleLarge)
-                FitiaProgressRow(
-                    label = stringResource(R.string.nutrition_calories),
-                    current = totals.calories,
-                    target = targets?.calories?.toDouble(),
-                )
-                FitiaProgressRow(
-                    label = stringResource(R.string.nutrition_protein),
-                    current = totals.proteinGrams,
-                    target = targets?.proteinGrams,
-                )
-                FitiaProgressRow(
-                    label = stringResource(R.string.nutrition_carbs),
-                    current = totals.carbsGrams,
-                    target = targets?.carbsGrams,
-                )
-                FitiaProgressRow(
-                    label = stringResource(R.string.nutrition_fat),
-                    current = totals.fatGrams,
-                    target = targets?.fatGrams,
-                )
-                FitiaProgressRow(
-                    label = stringResource(R.string.nutrition_water),
-                    current = state.waterMl.toDouble(),
-                    target = targets?.waterMlGoal?.toDouble() ?: 3000.0,
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = FitiaSpace.related),
-                    horizontalArrangement = Arrangement.spacedBy(FitiaSpace.related),
-                ) {
-                    FitiaPillChip(text = "+250 ml", selected = false, onClick = { viewModel.addWater(250) })
-                    FitiaPillChip(text = "+500 ml", selected = false, onClick = { viewModel.addWater(500) })
-                }
-                if (state.waterLogs.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.nutrition_water_logs),
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(top = FitiaSpace.stack),
-                    )
-                    state.waterLogs.forEach { log ->
-                        Text(
-                            text = stringResource(R.string.nutrition_water_log, log.amountMl),
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fitiaClickable(
-                                    onClick = {},
-                                    onLongClick = { pending = NutritionItemAction.WaterItem(log) },
-                                    onLongClickLabel = longPressLabel,
-                                )
-                                .padding(vertical = 6.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
-            FitiaPrimaryButton(
-                text = stringResource(R.string.nutrition_food_photo),
-                onClick = { onFoodPhoto(state.dayEpochDay) },
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
-            ) {
-                FitiaSecondaryButton(
-                    text = stringResource(R.string.nutrition_profile),
-                    onClick = onOpenProfile,
-                    modifier = Modifier.weight(1f),
-                )
-                FitiaSecondaryButton(
-                    text = stringResource(R.string.nutrition_targets),
-                    onClick = onOpenTargets,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-        item {
-            FitiaSecondaryButton(
-                text = stringResource(R.string.nutrition_foods),
-                onClick = onOpenFoods,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        if (state.dayLog.meals.isEmpty()) {
-            item(key = "meals-empty") {
-                Text(
-                    text = stringResource(R.string.nutrition_empty_meals),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        state.dayLog.meals.forEach { meal ->
-            item(key = "meal-header-${meal.id}") {
-                FitiaSectionHeader(
-                    title = meal.name,
-                    actionLabel = stringResource(R.string.nutrition_add_food),
-                    onAction = { onAddEntry(meal.id) },
-                    onTitleLongClick = { pending = NutritionItemAction.MealItem(meal) },
-                    onTitleLongClickLabel = longPressLabel,
-                )
-            }
-            items(
-                items = meal.entries,
-                key = { entry -> "meal-${meal.id}-entry-${entry.id}" },
-            ) { entry ->
-                FitiaCard(
-                    onClick = { editEntry = entry },
-                    onLongClick = { pending = NutritionItemAction.EntryItem(entry) },
-                    onLongClickLabel = longPressLabel,
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(entry.name, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                text = stringResource(
-                                    R.string.nutrition_entry_macros,
-                                    entry.grams.toInt(),
-                                    entry.calories.toInt(),
-                                    entry.proteinGrams.toInt(),
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        IconButton(modifier = Modifier.fitiaPress(), onClick = { viewModel.deleteEntry(entry) }) {
-                            Icon(
-                                Icons.Outlined.Delete,
-                                contentDescription = stringResource(R.string.action_delete),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        item(key = "add-meal") {
-            FitiaSecondaryButton(
-                text = stringResource(R.string.nutrition_add_meal),
-                onClick = { showAddMeal = true },
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
-    }
+
 
     when (val action = pending) {
         null -> Unit
@@ -479,6 +291,370 @@ fun NutritionHomeScreen(
                 showAddMeal = false
             },
         )
+    }
+}
+
+@Composable
+private fun NutritionTabHeader(
+    tab: NutritionTab,
+    onSelect: (NutritionTab) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .zIndex(1f)
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        Text(
+            text = stringResource(R.string.nutrition_title),
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.padding(
+                start = FitiaSpace.screen,
+                end = FitiaSpace.screen,
+                top = FitiaSpace.screen,
+            ),
+        )
+        Text(
+            text = stringResource(tab.hint),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            minLines = 2,
+            maxLines = 2,
+            modifier = Modifier.padding(
+                start = FitiaSpace.screen,
+                end = FitiaSpace.screen,
+                top = FitiaSpace.related,
+                bottom = FitiaSpace.stack,
+            ),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = FitiaSpace.screen),
+            horizontalArrangement = Arrangement.spacedBy(FitiaSpace.related),
+        ) {
+            NutritionTab.entries.forEach { item ->
+                FitiaPillChip(
+                    text = stringResource(item.label),
+                    selected = item == tab,
+                    onClick = { onSelect(item) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .padding(top = FitiaSpace.stack)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+        )
+    }
+}
+
+@Composable
+private fun NutritionPlanPage(
+    plans: List<NutritionPlan>,
+    needsPlan: Boolean,
+    longPressLabel: String,
+    onOpenPlans: () -> Unit,
+    onCreatePlanWizard: () -> Unit,
+    onOpenProfile: () -> Unit,
+    onOpenTargets: () -> Unit,
+    onPlanLongClick: (NutritionPlan) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = FitiaSpace.page(),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
+    ) {
+        if (needsPlan) {
+            item(key = "need-plan") {
+                FitiaCard {
+                    Text(
+                        text = stringResource(R.string.nutrition_need_plan_title),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = stringResource(R.string.nutrition_need_plan_body),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = FitiaSpace.related, bottom = FitiaSpace.stack),
+                    )
+                    FitiaPrimaryButton(
+                        text = stringResource(R.string.nutrition_create_plan_ai),
+                        onClick = onCreatePlanWizard,
+                    )
+                }
+            }
+        } else {
+            item(key = "plan-header") {
+                FitiaSectionHeader(
+                    title = stringResource(R.string.nutrition_section_plan),
+                    actionLabel = stringResource(R.string.see_all),
+                    onAction = onOpenPlans,
+                )
+            }
+            items(plans.take(3), key = { it.id }) { plan ->
+                FitiaCard(
+                    onClick = onOpenPlans,
+                    onLongClick = { onPlanLongClick(plan) },
+                    onLongClickLabel = longPressLabel,
+                ) {
+                    Text(plan.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = stringResource(
+                            R.string.nutrition_plan_macros,
+                            plan.calories,
+                            plan.proteinGrams.toInt(),
+                            plan.carbsGrams.toInt(),
+                            plan.fatGrams.toInt(),
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = FitiaSpace.related),
+                    )
+                }
+            }
+            item(key = "create-plan") {
+                FitiaSecondaryButton(
+                    text = stringResource(R.string.nutrition_create_plan_ai),
+                    onClick = onCreatePlanWizard,
+                )
+            }
+        }
+        item(key = "profile-targets") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
+            ) {
+                FitiaSecondaryButton(
+                    text = stringResource(R.string.nutrition_profile),
+                    onClick = onOpenProfile,
+                    modifier = Modifier.weight(1f),
+                )
+                FitiaSecondaryButton(
+                    text = stringResource(R.string.nutrition_targets),
+                    onClick = onOpenTargets,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NutritionLogPage(
+    state: NutritionHomeUiState,
+    dateLabel: String,
+    needsPlan: Boolean,
+    longPressLabel: String,
+    onShiftDay: (Long) -> Unit,
+    onOpenCalendar: () -> Unit,
+    onOpenPlanTab: () -> Unit,
+    onFoodPhoto: () -> Unit,
+    onOpenFoods: () -> Unit,
+    onAddEntry: (Long) -> Unit,
+    onEditEntry: (MealEntry) -> Unit,
+    onDeleteEntry: (MealEntry) -> Unit,
+    onMealLongClick: (Meal) -> Unit,
+    onEntryLongClick: (MealEntry) -> Unit,
+    onWaterLongClick: (WaterLog) -> Unit,
+    onAddWater: (Int) -> Unit,
+    onAddMeal: () -> Unit,
+) {
+    val totals = state.dayLog.totals
+    val targets = state.targets
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = FitiaSpace.page(),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
+    ) {
+        item(key = "day") {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                IconButton(modifier = Modifier.fitiaPress(), onClick = { onShiftDay(-1L) }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = stringResource(R.string.nutrition_prev_day),
+                    )
+                }
+                Text(
+                    text = dateLabel,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.clickable(onClick = onOpenCalendar),
+                )
+                IconButton(modifier = Modifier.fitiaPress(), onClick = { onShiftDay(1L) }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = stringResource(R.string.nutrition_next_day),
+                    )
+                }
+            }
+        }
+        item(key = "calendar") {
+            FitiaSecondaryButton(
+                text = stringResource(R.string.nutrition_calendar),
+                onClick = onOpenCalendar,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (needsPlan) {
+            item(key = "needs-plan") {
+                FitiaCard(onClick = onOpenPlanTab) {
+                    Text(
+                        text = stringResource(R.string.nutrition_log_needs_plan),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        item(key = "progress") {
+            FitiaCard {
+                Text(
+                    text = stringResource(R.string.nutrition_today_progress),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                FitiaProgressRow(
+                    label = stringResource(R.string.nutrition_calories),
+                    current = totals.calories,
+                    target = targets?.calories?.toDouble(),
+                )
+                FitiaProgressRow(
+                    label = stringResource(R.string.nutrition_protein),
+                    current = totals.proteinGrams,
+                    target = targets?.proteinGrams,
+                )
+                FitiaProgressRow(
+                    label = stringResource(R.string.nutrition_carbs),
+                    current = totals.carbsGrams,
+                    target = targets?.carbsGrams,
+                )
+                FitiaProgressRow(
+                    label = stringResource(R.string.nutrition_fat),
+                    current = totals.fatGrams,
+                    target = targets?.fatGrams,
+                )
+                FitiaProgressRow(
+                    label = stringResource(R.string.nutrition_water),
+                    current = state.waterMl.toDouble(),
+                    target = targets?.waterMlGoal?.toDouble() ?: 3000.0,
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = FitiaSpace.related),
+                    horizontalArrangement = Arrangement.spacedBy(FitiaSpace.related),
+                ) {
+                    FitiaPillChip(
+                        text = "+250 ml",
+                        selected = false,
+                        onClick = { onAddWater(250) },
+                    )
+                    FitiaPillChip(
+                        text = "+500 ml",
+                        selected = false,
+                        onClick = { onAddWater(500) },
+                    )
+                }
+                if (state.waterLogs.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.nutrition_water_logs),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(top = FitiaSpace.stack),
+                    )
+                    state.waterLogs.forEach { log ->
+                        Text(
+                            text = stringResource(R.string.nutrition_water_log, log.amountMl),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fitiaClickable(
+                                    onClick = {},
+                                    onLongClick = { onWaterLongClick(log) },
+                                    onLongClickLabel = longPressLabel,
+                                )
+                                .padding(vertical = FitiaSpace.related),
+                        )
+                    }
+                }
+            }
+        }
+        item(key = "photo") {
+            FitiaPrimaryButton(
+                text = stringResource(R.string.nutrition_food_photo),
+                onClick = onFoodPhoto,
+            )
+        }
+        item(key = "foods") {
+            FitiaSecondaryButton(
+                text = stringResource(R.string.nutrition_foods),
+                onClick = onOpenFoods,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (state.dayLog.meals.isEmpty()) {
+            item(key = "meals-empty") {
+                Text(
+                    text = stringResource(R.string.nutrition_empty_meals),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        state.dayLog.meals.forEach { meal ->
+            item(key = "meal-header-${meal.id}") {
+                FitiaSectionHeader(
+                    title = meal.name,
+                    actionLabel = stringResource(R.string.nutrition_add_food),
+                    onAction = { onAddEntry(meal.id) },
+                    onTitleLongClick = { onMealLongClick(meal) },
+                    onTitleLongClickLabel = longPressLabel,
+                )
+            }
+            items(
+                items = meal.entries,
+                key = { entry -> "meal-${meal.id}-entry-${entry.id}" },
+            ) { entry ->
+                FitiaCard(
+                    onClick = { onEditEntry(entry) },
+                    onLongClick = { onEntryLongClick(entry) },
+                    onLongClickLabel = longPressLabel,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(entry.name, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                text = stringResource(
+                                    R.string.nutrition_entry_macros,
+                                    entry.grams.toInt(),
+                                    entry.calories.toInt(),
+                                    entry.proteinGrams.toInt(),
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconButton(modifier = Modifier.fitiaPress(), onClick = { onDeleteEntry(entry) }) {
+                            Icon(
+                                Icons.Outlined.Delete,
+                                contentDescription = stringResource(R.string.action_delete),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        item(key = "add-meal") {
+            FitiaSecondaryButton(
+                text = stringResource(R.string.nutrition_add_meal),
+                onClick = onAddMeal,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

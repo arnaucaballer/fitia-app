@@ -218,7 +218,11 @@
     <string name="chat_time_yesterday">Ayer, %1$s</string>
     <string name="nutrition_title">Alimentación</string>
     <string name="nutrition_placeholder">Aquí irán tu perfil, macros y el diario del día.</string>
-    <string name="nutrition_home_subtitle">Empieza por un plan. Luego registra comida y agua del día.</string>
+    <string name="nutrition_tab_plan">Plan</string>
+    <string name="nutrition_tab_log">Diario</string>
+    <string name="nutrition_tab_hint_plan">El plan nutricional, el perfil y los objetivos.</string>
+    <string name="nutrition_tab_hint_log">Comidas, agua y el progreso de cada día.</string>
+    <string name="nutrition_log_needs_plan">Sin plan, el progreso no tiene objetivo. Créalo en la pestaña Plan.</string>
     <string name="nutrition_need_plan_title">Crea tu plan nutricional</string>
     <string name="nutrition_need_plan_body">Formulario + fotos del físico. La IA calibra calorías, macros y agua.</string>
     <string name="nutrition_create_plan_ai">Crear plan con IA</string>

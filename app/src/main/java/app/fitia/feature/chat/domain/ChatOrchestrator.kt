@@ -129,7 +129,7 @@ class ChatOrchestrator(
               6. Registrar: «Sesión libre» o «Empezar desde un entreno». En una sesión libre, «Añadir ejercicio» y luego «Terminar sesión».
               7. Calendario: tocar un día y asignar el entreno. En Empezar se ve el entreno de hoy.
               8. Mantener pulsado un plan, un entreno o una comida abre editar o eliminar.
-              9. Alimentación: Perfil, Objetivos, Planes, Alimentos, Calendario, el agua y las comidas del día. «Foto de comida» estima la comida. «Crear plan con IA» abre el formulario del plan.
+              9. Alimentación tiene dos pestañas. Plan: perfil, objetivos, planes y «Crear plan con IA». Diario: el día, el calendario, el agua, las comidas, Alimentos y «Foto de comida».
               10. Ajustes: icono de engranaje arriba a la derecha en Chat. Ahí están Proveedor, Clave de API y Modelo.
             - Un plan es un conjunto de entrenos. Un entreno de la biblioteca se puede reutilizar en varios planes. Un entreno creado dentro de un plan solo existe en ese plan.
             - Macros y comida: cifras concretas, no redondeos vagos. Usa la referencia de abajo y no inventes kcal de alimentos.
