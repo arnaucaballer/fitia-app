@@ -11,7 +11,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,6 +46,7 @@ import app.fitia.design.FitiaCardShape
 import app.fitia.design.FitiaMotion
 import app.fitia.design.FitiaPrimaryButton
 import app.fitia.design.FitiaSectionHeader
+import app.fitia.design.FitiaSpace
 import app.fitia.design.fitiaClickable
 import app.fitia.design.fitiaPress
 import app.fitia.di.fitiaContainer
@@ -100,8 +100,8 @@ fun LogSessionScreen(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = FitiaSpace.page(),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
     ) {
         val session = activeSession
         if (session != null) {
@@ -115,7 +115,7 @@ fun LogSessionScreen(
                     Text(
                         text = session.name,
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                 }
             }
@@ -218,7 +218,7 @@ private fun LogWorkoutSection(
                 .clip(FitiaCardShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .fitiaClickable(onClick = onToggle)
-                .padding(horizontal = 18.dp, vertical = 12.dp),
+                .padding(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -248,7 +248,7 @@ private fun LogWorkoutSection(
             enter = expandVertically(animationSpec = sizeSpec) + fadeIn(animationSpec = FitiaMotion.effects()),
             exit = shrinkVertically(animationSpec = sizeSpec) + fadeOut(animationSpec = FitiaMotion.effects()),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(FitiaSpace.related)) {
                 workouts.forEach { workout ->
                     FitiaCard {
                         Row(

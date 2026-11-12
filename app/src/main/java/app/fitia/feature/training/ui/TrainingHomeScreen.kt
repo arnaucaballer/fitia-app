@@ -42,6 +42,7 @@ import app.fitia.design.FitiaCardShape
 import app.fitia.design.FitiaPrimaryButton
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.design.FitiaSectionHeader
+import app.fitia.design.FitiaSpace
 import app.fitia.design.ItemActionsDialog
 import app.fitia.design.fitiaClickable
 import app.fitia.design.fitiaPress
@@ -115,12 +116,12 @@ fun TrainingHomeScreen(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 20.dp,
-            end = 20.dp,
-            top = 28.dp + padding.calculateTopPadding(),
-            bottom = 28.dp + padding.calculateBottomPadding(),
+            start = FitiaSpace.screen,
+            end = FitiaSpace.screen,
+            top = FitiaSpace.screen + padding.calculateTopPadding(),
+            bottom = FitiaSpace.screen + padding.calculateBottomPadding(),
         ),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
     ) {
         item(key = "header") {
             Text(
@@ -131,7 +132,7 @@ fun TrainingHomeScreen(
                 text = stringResource(R.string.training_home_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                modifier = Modifier.padding(top = FitiaSpace.related, bottom = FitiaSpace.related),
             )
         }
 
@@ -150,7 +151,7 @@ fun TrainingHomeScreen(
                     Text(
                         text = activeSession.name,
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                 }
             }
@@ -225,7 +226,7 @@ fun TrainingHomeScreen(
                         text = stringResource(R.string.training_workout_generic_badge),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                 }
             }
@@ -234,7 +235,7 @@ fun TrainingHomeScreen(
         item(key = "secondary-actions") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
             ) {
                 FitiaSecondaryButton(
                     text = stringResource(R.string.training_open_exercises),
@@ -359,7 +360,7 @@ private fun FeaturedPlanCard(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 18.dp, vertical = 18.dp),
+                .padding(FitiaSpace.card),
         ) {
             Text(
                 text = stringResource(R.string.training_plan_badge),
@@ -370,7 +371,7 @@ private fun FeaturedPlanCard(
                 text = plan.name,
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier.padding(top = FitiaSpace.related),
             )
             Text(
                 text = stringResource(
@@ -379,19 +380,19 @@ private fun FeaturedPlanCard(
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier.padding(top = FitiaSpace.related),
             )
             if (plan.workouts.isEmpty()) {
                 Text(
                     text = stringResource(R.string.training_plan_no_workouts),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.65f),
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = FitiaSpace.stack),
                 )
             } else {
                 Column(
-                    modifier = Modifier.padding(top = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = FitiaSpace.stack),
+                    verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
                 ) {
                     plan.workouts.forEachIndexed { index, workout ->
                         val typeLabel = if (workout.isGeneric) {
@@ -417,7 +418,7 @@ private fun FeaturedPlanCard(
                 text = stringResource(R.string.training_plan_open_hint),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 14.dp),
+                modifier = Modifier.padding(top = FitiaSpace.stack),
             )
         }
     }
@@ -435,8 +436,8 @@ private fun FeaturedPlanEmptyCard(onGeneratePlan: () -> Unit) {
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
                 shape = FitiaCardShape,
             )
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(FitiaSpace.card),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
     ) {
         Text(
             text = stringResource(R.string.training_plan_badge),

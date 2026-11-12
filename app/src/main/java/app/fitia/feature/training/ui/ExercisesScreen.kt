@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaCardShape
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
 import app.fitia.feature.training.domain.Exercise
@@ -117,8 +117,8 @@ fun ExercisesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = FitiaSpace.page(),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             item(key = "actions") {
                 FitiaPrimaryButton(
@@ -206,13 +206,13 @@ private fun MuscleExerciseSection(
                 .fillMaxWidth()
                 .heightIn(min = 56.dp)
                 .clickable { expanded = !expanded }
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = FitiaSpace.card),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(FitiaSpace.related),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(muscleName, style = MaterialTheme.typography.titleMedium)
@@ -229,8 +229,12 @@ private fun MuscleExerciseSection(
             exit = shrinkVertically(animationSpec = motion),
         ) {
             Column(
-                modifier = Modifier.padding(start = 16.dp, end = 8.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(
+                    start = FitiaSpace.card,
+                    end = FitiaSpace.card,
+                    bottom = FitiaSpace.stack,
+                ),
+                verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
             ) {
                 exercises.forEach { exercise ->
                     Row(
@@ -238,7 +242,7 @@ private fun MuscleExerciseSection(
                             .fillMaxWidth()
                             .clip(FitiaCardShape)
                             .clickable { onEdit(exercise) }
-                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                            .padding(vertical = FitiaSpace.stack, horizontal = FitiaSpace.related),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {

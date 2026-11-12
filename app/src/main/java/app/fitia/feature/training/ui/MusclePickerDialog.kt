@@ -53,6 +53,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import app.fitia.R
 import app.fitia.design.FitiaPill
+import app.fitia.design.FitiaSpace
 import app.fitia.feature.training.domain.Muscle
 import app.fitia.design.fitiaPress
 
@@ -163,7 +164,7 @@ private fun BodyStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp)
+            .padding(horizontal = FitiaSpace.screen)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -242,7 +243,7 @@ private fun BodyStep(
                 }
             }
         }
-        Box(Modifier.padding(bottom = 16.dp))
+        Box(Modifier.padding(bottom = FitiaSpace.card))
     }
 }
 
@@ -255,7 +256,7 @@ private fun DetailStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp)
+            .padding(horizontal = FitiaSpace.screen)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -279,7 +280,7 @@ private fun DetailStep(
             name = zone.generalName,
             onClick = { onPick(zone.generalName) },
         )
-        Box(Modifier.padding(bottom = 8.dp))
+        Box(Modifier.padding(bottom = FitiaSpace.related))
     }
 }
 
@@ -298,7 +299,7 @@ private fun GeneralMuscleButton(
             .clip(FitiaPill)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
+            .padding(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
     )
 }
 
@@ -336,6 +337,6 @@ private fun SideChip(
             .clip(FitiaPill)
             .background(background)
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = FitiaSpace.screen, vertical = FitiaSpace.stack),
     )
 }

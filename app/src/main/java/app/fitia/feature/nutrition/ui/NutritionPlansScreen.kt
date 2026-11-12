@@ -2,7 +2,6 @@ package app.fitia.feature.nutrition.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,11 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaCard
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
@@ -81,8 +80,8 @@ fun NutritionPlansScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = FitiaSpace.page(),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             if (plans.isEmpty()) {
                 item {

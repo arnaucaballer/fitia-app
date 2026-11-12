@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaPill
+import app.fitia.design.FitiaSpace
 import app.fitia.design.MarkdownText
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
@@ -233,13 +234,13 @@ fun ChatScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = FitiaSpace.screen),
             )
         } else Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = FitiaSpace.screen),
         ) {
             if (!configured) {
                 TextButton(modifier = Modifier.fitiaPress(), onClick = onOpenSettings) {
@@ -252,8 +253,8 @@ fun ChatScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(vertical = FitiaSpace.screen),
+                verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
             ) {
                 if (messages.isEmpty()) {
                     item {
@@ -272,15 +273,15 @@ fun ChatScreen(
                 CircularProgressIndicator(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .padding(8.dp),
+                        .padding(FitiaSpace.related),
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(FitiaSpace.related),
+                modifier = Modifier.padding(bottom = FitiaSpace.related),
             ) {
                 OutlinedTextField(
                     value = draft,
@@ -338,7 +339,7 @@ private fun ChatBubble(message: UiChatMessage) {
                 .widthIn(max = 320.dp)
                 .clip(shape)
                 .background(bg)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
         ) {
             if (isUser) {
                 Text(

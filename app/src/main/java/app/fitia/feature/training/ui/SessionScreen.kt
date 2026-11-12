@@ -2,7 +2,6 @@ package app.fitia.feature.training.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
@@ -47,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
@@ -115,18 +115,13 @@ fun SessionScreen(
         val keyboardOpen by remember(ime, density) {
             derivedStateOf { ime.getBottom(density) > 0 }
         }
-        val listBottom = if (keyboardOpen) 80.dp else 24.dp
+        val listBottom = if (keyboardOpen) 80.dp else FitiaSpace.screen
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(
-                start = 24.dp,
-                end = 24.dp,
-                top = 8.dp,
-                bottom = listBottom,
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = FitiaSpace.page(bottom = listBottom),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             if (session?.status == SessionStatus.InProgress) {
                 item(key = "autosave-hint") {
@@ -242,7 +237,7 @@ private fun SessionExerciseBlock(
                 text = stringResource(R.string.training_no_sets),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier.padding(top = FitiaSpace.related),
             )
         }
         exercise.sets.forEach { set ->
@@ -308,7 +303,7 @@ private fun SessionSetRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .padding(top = FitiaSpace.related),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

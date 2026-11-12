@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.fitia.R
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.design.fitiaPress
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,8 +61,8 @@ fun NameInputDialog(
                 .imePadding()
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(FitiaSpace.page()),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             Text(text = title, style = MaterialTheme.typography.titleLarge)
             OutlinedTextField(

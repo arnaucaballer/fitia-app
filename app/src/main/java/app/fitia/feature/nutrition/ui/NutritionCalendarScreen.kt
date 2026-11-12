@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaCard
+import app.fitia.design.FitiaSpace
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
 import java.time.DayOfWeek
@@ -93,15 +94,14 @@ fun NutritionCalendarScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(padding),
+            contentPadding = FitiaSpace.page(),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             item {
                 Text(
                     text = stringResource(R.string.nutrition_calendar_hint),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
 

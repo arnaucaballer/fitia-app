@@ -3,7 +3,6 @@ package app.fitia.feature.training.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,6 +41,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
@@ -111,8 +111,8 @@ fun PlanDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = FitiaSpace.page(),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             item {
                 Text(
@@ -290,7 +290,7 @@ private fun GenericWorkoutPickerDialog(
                             )
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(top = 6.dp),
+                                modifier = Modifier.padding(top = FitiaSpace.related),
                             ) {
                                 TextButton(modifier = Modifier.fitiaPress(), onClick = { onLink(workout) }) {
                                     Text(stringResource(R.string.training_link_as_generic))

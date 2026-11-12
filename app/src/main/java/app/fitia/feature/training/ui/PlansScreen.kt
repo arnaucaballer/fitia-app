@@ -3,7 +3,6 @@ package app.fitia.feature.training.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
@@ -88,8 +88,8 @@ fun PlansScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = FitiaSpace.page(),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             item(key = "create") {
                 FitiaPrimaryButton(

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import app.fitia.R
 import app.fitia.design.FitiaCard
 import app.fitia.design.FitiaSecondaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.feature.training.domain.PlanWeeklySlot
 import app.fitia.feature.training.domain.TrainingPlan
 import app.fitia.feature.training.domain.Workout
@@ -55,7 +56,7 @@ fun PlanWeeklySetupSection(
             text = stringResource(R.string.training_weekly_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = FitiaSpace.related),
         )
         if (onUnfollowPlan != null) {
             FitiaSecondaryButton(

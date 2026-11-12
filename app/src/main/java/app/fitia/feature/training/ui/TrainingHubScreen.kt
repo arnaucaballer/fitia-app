@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import app.fitia.R
 import app.fitia.design.FitiaPillChip
+import app.fitia.design.FitiaSpace
 import app.fitia.navigation.RetainedPages
 
 private enum class TrainingTab(
@@ -93,7 +94,11 @@ fun TrainingHubScreen(
             Text(
                 text = stringResource(R.string.training_title),
                 style = MaterialTheme.typography.displaySmall,
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp),
+                modifier = Modifier.padding(
+                    start = FitiaSpace.screen,
+                    end = FitiaSpace.screen,
+                    top = FitiaSpace.screen,
+                ),
             )
             Text(
                 text = stringResource(tab.hint),
@@ -101,18 +106,23 @@ fun TrainingHubScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 minLines = 2,
                 maxLines = 2,
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
+                modifier = Modifier.padding(
+                    start = FitiaSpace.screen,
+                    end = FitiaSpace.screen,
+                    top = FitiaSpace.related,
+                    bottom = FitiaSpace.stack,
+                ),
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(horizontal = FitiaSpace.screen),
+                verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
             ) {
                 TrainingTab.entries.chunked(3).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(FitiaSpace.related),
                     ) {
                         row.forEach { item ->
                             FitiaPillChip(

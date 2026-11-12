@@ -51,7 +51,7 @@ fun ItemActionsDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = FitiaSpace.screen),
             contentAlignment = Alignment.Center,
         ) {
             Surface(
@@ -63,8 +63,8 @@ fun ItemActionsDialog(
                     modifier = Modifier
                         .heightIn(max = 520.dp)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(FitiaSpace.page()),
+                    verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
                 ) {
                     Text(
                         text = title,
@@ -126,7 +126,7 @@ private fun ActionRow(
             .clip(FitiaPill)
             .background(MaterialTheme.colorScheme.secondaryContainer)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

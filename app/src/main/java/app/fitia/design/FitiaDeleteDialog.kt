@@ -45,7 +45,7 @@ fun FitiaDeleteDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = FitiaSpace.screen),
             contentAlignment = Alignment.Center,
         ) {
             Surface(
@@ -57,9 +57,9 @@ fun FitiaDeleteDialog(
                     modifier = Modifier
                         .heightIn(max = 520.dp)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                        .padding(FitiaSpace.page()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
                 ) {
                     Box(
                         modifier = Modifier

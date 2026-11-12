@@ -2,7 +2,6 @@ package app.fitia.feature.nutrition.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,6 +36,7 @@ import app.fitia.R
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
 import app.fitia.feature.nutrition.domain.MacroTargets
+import app.fitia.design.FitiaSpace
 import app.fitia.design.fitiaPress
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,8 +98,8 @@ fun TargetsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(PaddingValues(24.dp)),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(FitiaSpace.page()),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             targets?.let {
                 Text(

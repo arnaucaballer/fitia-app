@@ -74,7 +74,7 @@ fun FitiaCard(
         base
     }
     Column(
-        modifier = clickable.padding(18.dp),
+        modifier = clickable.padding(FitiaSpace.card),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         content()
@@ -93,7 +93,7 @@ fun FitiaPrimaryButton(
         enabled = enabled,
         modifier = modifier.fitiaPress().fillMaxWidth(),
         shape = FitiaPill,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -120,7 +120,7 @@ fun FitiaDangerButton(
         onClick = onClick,
         modifier = modifier.fitiaPress().fillMaxWidth(),
         shape = FitiaPill,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,
@@ -148,7 +148,7 @@ fun FitiaSecondaryButton(
         enabled = enabled,
         modifier = modifier.fitiaPress(),
         shape = FitiaPill,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        contentPadding = PaddingValues(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -259,7 +259,7 @@ fun FitiaProgressRow(
     accent: Color = MaterialTheme.colorScheme.primary,
 ) {
     val progress = if (target == null || target <= 0.0) 0f else (current / target).toFloat().coerceIn(0f, 1f)
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+    Column(modifier = Modifier.padding(vertical = FitiaSpace.related)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.labelLarge)
             Text(
@@ -271,7 +271,7 @@ fun FitiaProgressRow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp)
+                .padding(top = FitiaSpace.related)
                 .height(10.dp)
                 .clip(FitiaPill)
                 .background(MaterialTheme.colorScheme.outline),
@@ -299,9 +299,9 @@ fun RowScope.FitiaStat(
             .weight(1f)
             .clip(FitiaCardShape)
             .background(MaterialTheme.colorScheme.surface)
-            .padding(14.dp),
+            .padding(FitiaSpace.card),
     ) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-        Text(value, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 4.dp))
+        Text(value, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = FitiaSpace.related))
     }
 }

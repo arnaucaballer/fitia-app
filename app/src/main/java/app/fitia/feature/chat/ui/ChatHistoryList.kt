@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.fitia.R
 import app.fitia.design.FitiaCard
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaDeleteDialog
 import app.fitia.design.FitiaPrimaryButton
 import app.fitia.design.ItemActionsDialog
@@ -63,9 +64,7 @@ fun ChatHistoryList(
 
     if (threads.isEmpty()) {
         Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp),
+            modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -79,14 +78,14 @@ fun ChatHistoryList(
                 text = stringResource(R.string.chat_new),
                 onClick = onNewChat,
                 enabled = interactionEnabled,
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.padding(top = FitiaSpace.card),
             )
         }
     } else {
         LazyColumn(
             modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = FitiaSpace.screen),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             if (showSections) {
                 item(key = "pinned-header") {
@@ -169,7 +168,7 @@ private fun SectionLabel(text: String) {
         text = text,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 8.dp, start = 4.dp),
+        modifier = Modifier.padding(top = FitiaSpace.related),
     )
 }
 

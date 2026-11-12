@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import app.fitia.core.images.ImageScaling
 import app.fitia.R
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
 import app.fitia.feature.nutrition.domain.ActivityLevel
@@ -123,9 +124,9 @@ fun NutritionPlanWizardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(20.dp)
+                .padding(FitiaSpace.page())
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             Text(
                 text = stringResource(R.string.nutrition_wizard_hint),

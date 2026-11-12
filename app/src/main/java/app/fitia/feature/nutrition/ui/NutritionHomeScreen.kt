@@ -3,7 +3,6 @@ package app.fitia.feature.nutrition.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaCard
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaPillChip
 import app.fitia.design.FitiaPrimaryButton
 import app.fitia.design.FitiaProgressRow
@@ -128,13 +128,8 @@ fun NutritionHomeScreen(
     ) { _ ->
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 20.dp,
-            end = 20.dp,
-            top = 28.dp,
-            bottom = 28.dp,
-        ),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = FitiaSpace.page(),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
     ) {
         item {
             Text(
@@ -145,7 +140,7 @@ fun NutritionHomeScreen(
                 text = stringResource(R.string.nutrition_home_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = FitiaSpace.related),
             )
         }
 
@@ -156,7 +151,7 @@ fun NutritionHomeScreen(
                     Text(
                         text = stringResource(R.string.nutrition_need_plan_body),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 14.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related, bottom = FitiaSpace.stack),
                     )
                     FitiaPrimaryButton(
                         text = stringResource(R.string.nutrition_create_plan_ai),
@@ -188,7 +183,7 @@ fun NutritionHomeScreen(
                             plan.fatGrams.toInt(),
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                 }
             }
@@ -265,8 +260,8 @@ fun NutritionHomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(top = FitiaSpace.related),
+                    horizontalArrangement = Arrangement.spacedBy(FitiaSpace.related),
                 ) {
                     FitiaPillChip(text = "+250 ml", selected = false, onClick = { viewModel.addWater(250) })
                     FitiaPillChip(text = "+500 ml", selected = false, onClick = { viewModel.addWater(500) })
@@ -275,7 +270,7 @@ fun NutritionHomeScreen(
                     Text(
                         text = stringResource(R.string.nutrition_water_logs),
                         style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(top = 12.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.stack),
                     )
                     state.waterLogs.forEach { log ->
                         Text(
@@ -305,7 +300,7 @@ fun NutritionHomeScreen(
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
             ) {
                 FitiaSecondaryButton(
                     text = stringResource(R.string.nutrition_profile),
@@ -516,7 +511,7 @@ private fun NutritionPlanEditDialog(
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
             ) {
                 OutlinedTextField(
                     value = name,
@@ -585,7 +580,7 @@ private fun MealEntryEditDialog(
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
             ) {
                 OutlinedTextField(
                     value = name,

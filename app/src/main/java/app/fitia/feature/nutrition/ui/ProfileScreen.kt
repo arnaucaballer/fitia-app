@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,6 +40,7 @@ import app.fitia.di.fitiaViewModelFactory
 import app.fitia.feature.nutrition.domain.ActivityLevel
 import app.fitia.feature.nutrition.domain.NutritionGoal
 import app.fitia.feature.nutrition.domain.Sex
+import app.fitia.design.FitiaSpace
 import app.fitia.design.fitiaPress
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -99,8 +99,8 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(PaddingValues(24.dp)),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(FitiaSpace.page()),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             OutlinedTextField(
                 value = weight,

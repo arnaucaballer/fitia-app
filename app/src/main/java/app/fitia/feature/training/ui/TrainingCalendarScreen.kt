@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaCard
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaDangerButton
 import app.fitia.design.FitiaDeleteDialog
 import app.fitia.design.FitiaPrimaryButton
@@ -125,8 +125,8 @@ fun TrainingCalendarScreen(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = FitiaSpace.page(),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
     ) {
         if (highlightWeeklySetup && activePlan != null) {
             item(key = "weekly-highlight") {
@@ -262,7 +262,7 @@ fun TrainingCalendarScreen(
                     Text(
                         text = daySchedule.workoutName,
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                     Row(
                         modifier = Modifier
@@ -285,7 +285,7 @@ fun TrainingCalendarScreen(
                     Text(
                         text = stringResource(R.string.training_schedule_empty_day),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                     FitiaSecondaryButton(
                         text = stringResource(R.string.training_schedule_assign_day),

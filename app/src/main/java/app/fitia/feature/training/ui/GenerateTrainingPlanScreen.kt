@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.fitia.R
 import app.fitia.design.FitiaCard
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaPrimaryButton
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
@@ -126,9 +127,9 @@ fun GenerateTrainingPlanScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .padding(20.dp)
+            .padding(FitiaSpace.page())
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
             if (showingPreview) {
@@ -200,7 +201,7 @@ private fun TrainingPlanFormStep(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -268,7 +269,7 @@ private fun TrainingPlanPreviewStep(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -333,8 +334,7 @@ private fun TrainingPlanPreviewStep(
 private fun TrainingPlanPreviewWorkoutCard(workout: Workout) {
     FitiaCard(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
         ) {
             Text(workout.name, style = MaterialTheme.typography.titleSmall)
             if (workout.notes.isNotBlank()) {

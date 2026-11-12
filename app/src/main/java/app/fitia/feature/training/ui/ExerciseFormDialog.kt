@@ -45,6 +45,7 @@ import app.fitia.R
 import app.fitia.design.FitiaPill
 import app.fitia.design.FitiaPrimaryButton
 import app.fitia.design.FitiaSecondaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.feature.training.domain.ExerciseMuscle
 import app.fitia.feature.training.domain.Muscle
 import app.fitia.design.fitiaPress
@@ -111,8 +112,8 @@ fun ExerciseFormDialog(
                     .imePadding()
                     .navigationBarsPadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(FitiaSpace.page()),
+                verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
             ) {
                 Text(text = title, style = MaterialTheme.typography.titleLarge)
                 OutlinedTextField(
@@ -225,8 +226,8 @@ private fun MuscleSelectionField(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
     ) {
         Text(
             text = stringResource(R.string.training_muscles_label),

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,6 +40,7 @@ import app.fitia.core.ai.AiModelCatalog
 import app.fitia.core.ai.AiProviderPreset
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
+import app.fitia.design.FitiaSpace
 import app.fitia.design.fitiaPress
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -96,8 +96,8 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(PaddingValues(24.dp)),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(FitiaSpace.page()),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             Text(stringResource(R.string.settings_provider))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

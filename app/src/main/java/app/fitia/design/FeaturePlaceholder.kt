@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun FeaturePlaceholder(
@@ -20,8 +19,8 @@ fun FeaturePlaceholder(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top),
+            .padding(FitiaSpace.page()),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack, Alignment.Top),
         horizontalAlignment = Alignment.Start,
     ) {
         Text(

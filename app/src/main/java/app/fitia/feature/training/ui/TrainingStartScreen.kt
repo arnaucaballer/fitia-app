@@ -1,7 +1,6 @@
 package app.fitia.feature.training.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,11 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitia.R
 import app.fitia.design.FitiaCard
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaPrimaryButton
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
@@ -70,8 +69,8 @@ fun TrainingStartScreen(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = FitiaSpace.page(),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
     ) {
         item {
             Text(dateLabel, style = MaterialTheme.typography.titleLarge)
@@ -88,20 +87,20 @@ fun TrainingStartScreen(
                     text = todaySchedule?.workoutName
                         ?: stringResource(R.string.training_start_no_workout_today),
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = FitiaSpace.related),
                 )
                 activeSession?.let { session ->
                     Text(
                         text = stringResource(R.string.training_train_active_hint, session.name),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                 }
                 FitiaPrimaryButton(
                     text = stringResource(R.string.training_start_train),
                     onClick = viewModel::trainToday,
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = FitiaSpace.card),
                 )
             }
         }
@@ -116,34 +115,34 @@ fun TrainingStartScreen(
                     Text(
                         text = stringResource(R.string.training_follow_plan_active, activePlan!!.name),
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                     FitiaSecondaryButton(
                         text = stringResource(R.string.training_weekly_open),
                         onClick = onOpenWeeklyCalendar,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp),
+                            .padding(top = FitiaSpace.stack),
                     )
                     FitiaSecondaryButton(
                         text = stringResource(R.string.training_unfollow_plan),
                         onClick = viewModel::stopFollowingPlan,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = FitiaSpace.related),
                     )
                 } else {
                     Text(
                         text = stringResource(R.string.training_follow_plan_empty),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                     FitiaSecondaryButton(
                         text = stringResource(R.string.training_follow_plan_choose),
                         onClick = onPickPlanToFollow,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp),
+                            .padding(top = FitiaSpace.stack),
                     )
                 }
             }

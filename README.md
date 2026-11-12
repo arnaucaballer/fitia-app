@@ -19,7 +19,7 @@ printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
 ./gradlew :app:assembleDebug
 ```
 
-El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.54.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados). Este APK usa el identificador `app.fitia`: no sustituye a una instalación anterior con otro identificador.
+El APK de entrega queda en `apk/fitia-<versión>.apk` (ahora `apk/fitia-0.1.55.apk`). Al subir `versionName` se genera un archivo nuevo y el anterior se queda. Cópialo al teléfono e instálalo (orígenes desconocidos activados). Este APK usa el identificador `app.fitia`: no sustituye a una instalación anterior con otro identificador.
 
 ## Clave de IA
 

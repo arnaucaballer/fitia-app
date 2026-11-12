@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
@@ -63,6 +62,7 @@ import app.fitia.design.FitiaCard
 import app.fitia.design.FitiaCardShape
 import app.fitia.design.FitiaDeleteDialog
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.feature.training.domain.SetTarget
 import kotlin.math.roundToInt
 import app.fitia.di.fitiaContainer
@@ -158,18 +158,13 @@ fun WorkoutDetailScreen(
         val keyboardOpen by remember(ime, density) {
             derivedStateOf { ime.getBottom(density) > 0 }
         }
-        val listBottom = if (keyboardOpen) 80.dp else 24.dp
+        val listBottom = if (keyboardOpen) 80.dp else FitiaSpace.screen
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(
-                start = 24.dp,
-                end = 24.dp,
-                top = 8.dp,
-                bottom = listBottom,
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = FitiaSpace.page(bottom = listBottom),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             item {
                 val current = workout
@@ -237,7 +232,7 @@ fun WorkoutDetailScreen(
                     Text(
                         text = stringResource(R.string.training_previous_sessions),
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = FitiaSpace.related),
                     )
                 }
                 items(previousSessions, key = { "prev-${it.id}" }) { session ->
@@ -327,7 +322,7 @@ private fun WorkoutExerciseEditor(
                 .fillMaxWidth()
                 .heightIn(min = 64.dp)
                 .clickable { expanded = !expanded }
-                .padding(start = 8.dp, end = 4.dp),
+                .padding(horizontal = FitiaSpace.card),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -335,7 +330,7 @@ private fun WorkoutExerciseEditor(
                 contentDescription = stringResource(
                     if (expanded) R.string.training_collapse_sets else R.string.training_expand_sets,
                 ),
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(FitiaSpace.related),
             )
             Column(
                 modifier = Modifier
@@ -365,7 +360,11 @@ private fun WorkoutExerciseEditor(
             exit = shrinkVertically(animationSpec = motion),
         ) {
             Column(
-                modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 16.dp),
+                modifier = Modifier.padding(
+                    start = FitiaSpace.card,
+                    end = FitiaSpace.card,
+                    bottom = FitiaSpace.card,
+                ),
             ) {
                 if (exercise.setTargets.isEmpty()) {
                     Text(
@@ -450,8 +449,8 @@ private fun SetTargetRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(top = FitiaSpace.related),
+        verticalArrangement = Arrangement.spacedBy(FitiaSpace.related),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -466,7 +465,7 @@ private fun SetTargetRow(
                 )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(FitiaSpace.related)) {
             OutlinedTextField(
                 value = weightText,
                 onValueChange = { weightText = it },

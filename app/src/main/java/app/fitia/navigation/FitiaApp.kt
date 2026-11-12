@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import app.fitia.design.FitiaMotion
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaNavShape
 import app.fitia.design.FitiaPill
 import app.fitia.design.fitiaPress
@@ -142,7 +143,7 @@ private fun FitiaBottomNavBar(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = FitiaSpace.screen, vertical = FitiaSpace.stack),
         contentAlignment = Alignment.Center,
     ) {
         Row(

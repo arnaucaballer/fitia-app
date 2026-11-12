@@ -3,7 +3,6 @@ package app.fitia.feature.training.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,6 +29,7 @@ import app.fitia.R
 import app.fitia.di.fitiaContainer
 import app.fitia.di.fitiaViewModelFactory
 import app.fitia.feature.training.domain.SessionStatus
+import app.fitia.design.FitiaSpace
 import app.fitia.design.formatDateTime
 import app.fitia.design.fitiaPress
 
@@ -68,8 +68,8 @@ fun HistoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = FitiaSpace.page(),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
         ) {
             if (sessions.isEmpty()) {
                 item {

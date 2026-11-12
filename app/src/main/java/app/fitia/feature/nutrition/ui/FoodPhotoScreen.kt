@@ -41,6 +41,7 @@ import androidx.core.content.FileProvider
 import app.fitia.R
 import app.fitia.core.images.ImageScaling
 import app.fitia.design.FitiaPrimaryButton
+import app.fitia.design.FitiaSpace
 import app.fitia.design.FitiaSecondaryButton
 import app.fitia.di.fitiaContainer
 import app.fitia.feature.chat.domain.FoodPhotoEstimate
@@ -159,9 +160,9 @@ fun FoodPhotoScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(20.dp)
+                .padding(FitiaSpace.page())
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(FitiaSpace.stack),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(

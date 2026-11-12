@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import app.fitia.design.FitiaPill
+import app.fitia.design.FitiaSpace
 
 @Composable
 fun MuscleNameChip(
@@ -97,7 +98,7 @@ fun MuscleNameChip(
                         view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
                         onClick()
                     }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = FitiaSpace.card, vertical = FitiaSpace.stack),
             )
         }
     }
